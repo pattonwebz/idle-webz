@@ -36,6 +36,7 @@ export class GameEngine {
   public producers: ProducerTier[];
   public autoBuyUnlocked: boolean;
   public autoBuyEnabled: boolean;
+  public autoBuySpeedLevel: number; // Number of speed upgrades purchased
   private lastUpdate: number;
   private lastAutoBuy: number;
   private bestValueProducerId: string | undefined;
@@ -47,6 +48,7 @@ export class GameEngine {
     this.lastUpdate = Date.now();
     this.autoBuyUnlocked = false;
     this.autoBuyEnabled = false;
+    this.autoBuySpeedLevel = 0;
     this.lastAutoBuy = Date.now();
     this.producers = this.initializeProducers();
     this.bestValueProducerId = undefined;
@@ -247,12 +249,13 @@ export class GameEngine {
 
   /**
    * Handle auto-buying of producers
-   * Buys the best value (lowest cost per resource) producer every 30 seconds
+   * Buys the best value (lowest cost per resource) producer based on upgrade interval
    */
   private handleAutoBuy(now: number): void {
-    // Check if 30 seconds have passed since last auto-buy
+    const interval = this.getAutoBuyInterval();
     const timeSinceLastBuy = now - this.lastAutoBuy;
-    if (timeSinceLastBuy < 30000) return; // 30 seconds = 30000ms
+
+    if (timeSinceLastBuy < interval) return;
 
     // Find all affordable producers (excluding manual)
     const affordableProducers = this.producers.filter(
@@ -298,6 +301,10 @@ export class GameEngine {
       bestValueProducerId: this.bestValueProducerId,
       autoBuyEnabled: this.autoBuyEnabled,
       autoBuyUnlocked: this.autoBuyUnlocked,
+      autoBuySpeedLevel: this.autoBuySpeedLevel,
+      autoBuySpeedUpgradeCost: this.getAutoBuySpeedUpgradeCost(),
+      canAffordAutoBuySpeedUpgrade: this.canAffordAutoBuySpeedUpgrade(),
+      autoBuyInterval: Math.ceil(this.getAutoBuyInterval() / 1000), // in seconds
       timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy()
     };
   }
@@ -307,8 +314,9 @@ export class GameEngine {
    */
   private getTimeUntilNextAutoBuy(): number {
     if (!this.autoBuyEnabled) return 0;
+    const interval = this.getAutoBuyInterval();
     const timeSinceLastBuy = Date.now() - this.lastAutoBuy;
-    const timeRemaining = Math.max(0, 30000 - timeSinceLastBuy);
+    const timeRemaining = Math.max(0, interval - timeSinceLastBuy);
     return Math.ceil(timeRemaining / 1000); // Convert to seconds
   }
 
@@ -327,7 +335,8 @@ export class GameEngine {
       })),
       lastUpdate: this.lastUpdate,
       autoBuyEnabled: this.autoBuyEnabled,
-      autoBuyUnlocked: this.autoBuyUnlocked
+      autoBuyUnlocked: this.autoBuyUnlocked,
+      autoBuySpeedLevel: this.autoBuySpeedLevel
     };
   }
 
@@ -340,6 +349,7 @@ export class GameEngine {
     lastUpdate?: number;
     autoBuyEnabled?: boolean;
     autoBuyUnlocked?: boolean;
+    autoBuySpeedLevel?: number;
   }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
@@ -367,6 +377,10 @@ export class GameEngine {
     if (saveData.autoBuyUnlocked !== undefined) {
       this.autoBuyUnlocked = saveData.autoBuyUnlocked;
     }
+
+    if (saveData.autoBuySpeedLevel !== undefined) {
+      this.autoBuySpeedLevel = saveData.autoBuySpeedLevel;
+    }
   }
 
   /**
@@ -382,6 +396,56 @@ export class GameEngine {
     this.resources -= cost;
     this.autoBuyUnlocked = true;
     return true;
+  }
+
+  /**
+   * Get the cost of the next auto-buy speed upgrade
+   * Base cost: 10000, multiplier: 1.5
+   */
+  getAutoBuySpeedUpgradeCost(): number {
+    const baseCost = 10000;
+    const multiplier = 1.5;
+    return Math.floor(baseCost * Math.pow(multiplier, this.autoBuySpeedLevel));
+  }
+
+  /**
+   * Check if player can afford the next auto-buy speed upgrade
+   */
+  canAffordAutoBuySpeedUpgrade(): boolean {
+    if (!this.autoBuyUnlocked) return false;
+    const cost = this.getAutoBuySpeedUpgradeCost();
+    return this.resources >= cost;
+  }
+
+  /**
+   * Purchase an auto-buy speed upgrade
+   * Each upgrade reduces the timer by 2 seconds (minimum 2 seconds)
+   * @returns true if purchase succeeded
+   */
+  purchaseAutoBuySpeedUpgrade(): boolean {
+    if (!this.autoBuyUnlocked) return false;
+
+    const cost = this.getAutoBuySpeedUpgradeCost();
+    if (this.resources < cost) return false;
+
+    // Cap at level 14 (30s - 14*2s = 2s minimum)
+    if (this.autoBuySpeedLevel >= 14) return false;
+
+    this.resources -= cost;
+    this.autoBuySpeedLevel++;
+
+    return true;
+  }
+
+  /**
+   * Get the auto-buy interval in milliseconds based on upgrade level
+   * Base: 30 seconds, -2 seconds per upgrade, minimum 2 seconds
+   */
+  getAutoBuyInterval(): number {
+    const baseInterval = 30000; // 30 seconds
+    const reduction = this.autoBuySpeedLevel * 2000; // 2 seconds per level
+    const minInterval = 2000; // 2 seconds minimum
+    return Math.max(minInterval, baseInterval - reduction);
   }
 
   /**
@@ -403,6 +467,7 @@ export class GameEngine {
     this.productionRate = 0;
     this.autoBuyUnlocked = false;
     this.autoBuyEnabled = false;
+    this.autoBuySpeedLevel = 0;
     this.lastAutoBuy = Date.now();
 
     for (const producer of this.producers) {

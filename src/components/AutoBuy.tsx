@@ -4,13 +4,26 @@
 
 import { useGame } from '../hooks/useGame';
 import './AutoBuy.scss';
+import { formatNumberAdaptive } from '../utils/gameUtils';
 
 /**
- * Displays auto-buy unlock/toggle button
- * Auto-buy purchases the best value affordable producer every 30 seconds when enabled
+ * Displays auto-buy unlock/toggle button and speed upgrades
+ * Auto-buy purchases the best value affordable producer at regular intervals
  */
 export const AutoBuy: React.FC = () => {
-  const { autoBuyUnlocked, autoBuyEnabled, resources, timeUntilNextAutoBuy, unlockAutoBuy, toggleAutoBuy } = useGame();
+  const {
+    autoBuyUnlocked,
+    autoBuyEnabled,
+    resources,
+    timeUntilNextAutoBuy,
+    autoBuySpeedLevel,
+    autoBuySpeedUpgradeCost,
+    canAffordAutoBuySpeedUpgrade,
+    autoBuyInterval,
+    unlockAutoBuy,
+    toggleAutoBuy,
+    purchaseAutoBuySpeedUpgrade
+  } = useGame();
 
   const handleUnlock = () => {
     unlockAutoBuy();
@@ -18,6 +31,10 @@ export const AutoBuy: React.FC = () => {
 
   const handleToggle = () => {
     toggleAutoBuy();
+  };
+
+  const handleSpeedUpgrade = () => {
+    purchaseAutoBuySpeedUpgrade();
   };
 
   const formatTime = (seconds: number): string => {
@@ -42,6 +59,8 @@ export const AutoBuy: React.FC = () => {
     );
   }
 
+  const maxLevel = autoBuySpeedLevel >= 14;
+
   return (
     <div className="auto-buy-container">
       <button
@@ -54,10 +73,31 @@ export const AutoBuy: React.FC = () => {
         </span>
         <span className="button-subtext">
           {autoBuyEnabled
-            ? `Next buy: ${formatTime(timeUntilNextAutoBuy)}`
-            : 'Click to enable'}
+            ? `Next buy: ${formatTime(timeUntilNextAutoBuy)} (${autoBuyInterval}s interval)`
+            : `Click to enable (${autoBuyInterval}s interval)`}
         </span>
       </button>
+
+      {!maxLevel && (
+        <button
+          className={`auto-buy-speed-button ${canAffordAutoBuySpeedUpgrade ? 'affordable' : 'unaffordable'}`}
+          onClick={handleSpeedUpgrade}
+          disabled={!canAffordAutoBuySpeedUpgrade}
+          aria-label={`Upgrade Auto-Buy Speed (Level ${autoBuySpeedLevel})`}
+        >
+          <span className="button-text">⚡ Speed Upgrade</span>
+          <span className="button-subtext">
+            Level {autoBuySpeedLevel} → {autoBuySpeedLevel + 1} (-2s) | Cost: {formatNumberAdaptive(autoBuySpeedUpgradeCost, 0, 1)}
+          </span>
+        </button>
+      )}
+
+      {maxLevel && (
+        <div className="max-level-indicator">
+          <span className="button-text">⚡ MAX SPEED</span>
+          <span className="button-subtext">Level {autoBuySpeedLevel} (2s minimum)</span>
+        </div>
+      )}
     </div>
   );
 };

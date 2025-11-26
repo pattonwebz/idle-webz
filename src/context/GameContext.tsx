@@ -34,6 +34,14 @@ export interface GameContextType {
   autoBuyUnlocked: boolean;
   /** Whether auto-buy is currently enabled */
   autoBuyEnabled: boolean;
+  /** Current auto-buy speed upgrade level */
+  autoBuySpeedLevel: number;
+  /** Cost of next auto-buy speed upgrade */
+  autoBuySpeedUpgradeCost: number;
+  /** Whether player can afford the next speed upgrade */
+  canAffordAutoBuySpeedUpgrade: boolean;
+  /** Current auto-buy interval in seconds */
+  autoBuyInterval: number;
   /** Time remaining until next auto-buy (in seconds) */
   timeUntilNextAutoBuy: number;
   /** Handle manual click action */
@@ -44,6 +52,8 @@ export interface GameContextType {
   unlockAutoBuy: () => boolean;
   /** Toggle auto-buy on/off */
   toggleAutoBuy: () => void;
+  /** Purchase auto-buy speed upgrade */
+  purchaseAutoBuySpeedUpgrade: () => boolean;
   /** Reset all game progress (with confirmation) */
   resetGame: () => void;
 }
@@ -184,6 +194,18 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setGameState(gameEngineRef.current.getState());
   }, []);
 
+  /**
+   * Purchase auto-buy speed upgrade
+   */
+  const purchaseAutoBuySpeedUpgrade = useCallback(() => {
+    if (!gameEngineRef.current) return false;
+    const success = gameEngineRef.current.purchaseAutoBuySpeedUpgrade();
+    if (success) {
+      setGameState(gameEngineRef.current.getState());
+    }
+    return success;
+  }, []);
+
   const value: GameContextType = {
     resources: gameState.resources,
     productionRate: gameState.productionRate,
@@ -191,11 +213,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     bestValueProducerId: gameState.bestValueProducerId,
     autoBuyUnlocked: gameState.autoBuyUnlocked,
     autoBuyEnabled: gameState.autoBuyEnabled,
+    autoBuySpeedLevel: gameState.autoBuySpeedLevel,
+    autoBuySpeedUpgradeCost: gameState.autoBuySpeedUpgradeCost,
+    canAffordAutoBuySpeedUpgrade: gameState.canAffordAutoBuySpeedUpgrade,
+    autoBuyInterval: gameState.autoBuyInterval,
     timeUntilNextAutoBuy: gameState.timeUntilNextAutoBuy,
     click,
     purchaseProducer,
     unlockAutoBuy,
     toggleAutoBuy,
+    purchaseAutoBuySpeedUpgrade,
     resetGame
   };
 
