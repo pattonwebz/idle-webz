@@ -14,16 +14,16 @@ export const BASE_CLICK_POWER = 1;
 /** Threshold for switching to scientific notation */
 export const SCIENTIFIC_NOTATION_THRESHOLD = 100000;
 
-/** Default cost multiplier for upgrades */
+/** Default cost multiplier for producers */
 export const DEFAULT_COST_MULTIPLIER = 1.15;
 
 /** Game update rate (60 fps) */
 export const GAME_UPDATE_FPS = 10;
 
 /**
- * Upgrade tier definitions
+ * Producer tier definitions
  */
-export const UPGRADE_TIERS = {
+export const PRODUCER_TIERS = {
   AUTO_CLICKER: {
     id: 'autoClicker',
     name: 'Auto Clicker',

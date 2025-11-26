@@ -6,7 +6,7 @@ import './App.scss'
 import { GameProvider } from './context/GameContext'
 import { ResourceDisplay } from './components/ResourceDisplay'
 import { ClickButton } from './components/ClickButton'
-import { UpgradeList } from './components/UpgradeList'
+import { ProducerList } from './components/ProducerList'
 import { GameControls } from './components/GameControls'
 
 /**
@@ -24,7 +24,7 @@ function App() {
         <main className="app-main">
           <ResourceDisplay />
           <ClickButton />
-          <UpgradeList />
+          <ProducerList />
         </main>
       </div>
     </GameProvider>

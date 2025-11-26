@@ -6,14 +6,14 @@
 import { createContext, useEffect, useState, useRef, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { GameEngine } from '../game/GameEngine';
-import type { UpgradeTier } from '../game/GameEngine';
+import type { ProducerTier } from '../game/GameEngine';
 import { SAVE_KEY, AUTO_SAVE_INTERVAL } from '../constants/gameConstants';
 import { GAME_UPDATE_FPS } from '../constants/gameConstants';
 
 /**
- * Extended upgrade information with computed properties for UI
+ * Extended producer information with computed properties for UI
  */
-interface UpgradeInfo extends UpgradeTier {
+interface ProducerInfo extends ProducerTier {
   cost: number;
   canAfford: boolean;
 }
@@ -26,12 +26,12 @@ export interface GameContextType {
   resources: number;
   /** Current production rate (resources per second) */
   productionRate: number;
-  /** List of all upgrades with computed properties */
-  upgrades: UpgradeInfo[];
+  /** List of all producers with computed properties */
+  producers: ProducerInfo[];
   /** Handle manual click action */
   click: () => void;
-  /** Attempt to purchase an upgrade */
-  purchaseUpgrade: (upgradeId: string) => boolean;
+  /** Attempt to purchase a producer */
+  purchaseProducer: (producerId: string) => boolean;
   /** Reset all game progress (with confirmation) */
   resetGame: () => void;
 }
@@ -126,13 +126,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * Attempt to purchase an upgrade
-   * @param upgradeId - Unique identifier of the upgrade
+   * Attempt to purchase a producer
+   * @param producerId - Unique identifier of the producer
    * @returns True if purchase succeeded
    */
-  const purchaseUpgrade = useCallback((upgradeId: string): boolean => {
+  const purchaseProducer = useCallback((producerId: string): boolean => {
     if (!gameEngineRef.current) return false;
-    const success = gameEngineRef.current.purchaseUpgrade(upgradeId);
+    const success = gameEngineRef.current.purchaseProducer(producerId);
     if (success) {
       setGameState(gameEngineRef.current.getState());
     }
@@ -154,9 +154,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const value: GameContextType = {
     resources: gameState.resources,
     productionRate: gameState.productionRate,
-    upgrades: gameState.upgrades,
+    producers: gameState.producers,
     click,
-    purchaseUpgrade,
+    purchaseProducer,
     resetGame
   };
 
