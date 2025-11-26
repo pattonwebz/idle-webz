@@ -1,0 +1,53 @@
+/**
+ * Breakpoint mixins for responsive design
+ * Uses values from gameConstants BREAKPOINTS
+ */
+
+// Breakpoint values
+$breakpoint-mobile: 320px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1024px;
+$breakpoint-wide: 1440px;
+
+// Mixins for responsive design
+@mixin mobile {
+  @media (max-width: #{$breakpoint-tablet - 1px}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: #{$breakpoint-tablet}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$breakpoint-desktop}) {
+    @content;
+  }
+}
+
+@mixin wide {
+  @media (min-width: #{$breakpoint-wide}) {
+    @content;
+  }
+}
+
+// Helper mixin for custom breakpoints
+@mixin breakpoint($min: null, $max: null) {
+  @if $min and $max {
+    @media (min-width: #{$min}) and (max-width: #{$max}) {
+      @content;
+    }
+  } @else if $min {
+    @media (min-width: #{$min}) {
+      @content;
+    }
+  } @else if $max {
+    @media (max-width: #{$max}) {
+      @content;
+    }
+  }
+}
+

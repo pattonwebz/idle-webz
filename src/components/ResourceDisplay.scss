@@ -1,0 +1,50 @@
+@use '../styles/breakpoints' as bp;
+
+.resource-display {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  color: white;
+
+  @include bp.tablet {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @include bp.desktop {
+    padding: 2rem;
+  }
+
+  .label {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 500;
+  }
+
+  .value {
+    font-size: clamp(1.25rem, 4vw, 1.8rem);
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    word-break: break-all;
+  }
+}
+
+.resource-count,
+.production-rate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  @include bp.tablet {
+    flex-wrap: nowrap;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
