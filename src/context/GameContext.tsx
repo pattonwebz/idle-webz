@@ -28,6 +28,8 @@ export interface GameContextType {
   productionRate: number;
   /** List of all producers with computed properties */
   producers: ProducerInfo[];
+  /** ID of the producer with the best base value (cost/production ratio) */
+  bestValueProducerId: string | undefined;
   /** Whether auto-buy is unlocked */
   autoBuyUnlocked: boolean;
   /** Whether auto-buy is currently enabled */
@@ -186,6 +188,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     resources: gameState.resources,
     productionRate: gameState.productionRate,
     producers: gameState.producers,
+    bestValueProducerId: gameState.bestValueProducerId,
     autoBuyUnlocked: gameState.autoBuyUnlocked,
     autoBuyEnabled: gameState.autoBuyEnabled,
     timeUntilNextAutoBuy: gameState.timeUntilNextAutoBuy,

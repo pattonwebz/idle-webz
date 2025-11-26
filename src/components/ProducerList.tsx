@@ -11,31 +11,7 @@ import { formatNumberAdaptive } from '../utils/gameUtils';
  * Cards show affordability status with visual indicators
  */
 export const ProducerList: React.FC = () => {
-  const { producers, purchaseProducer } = useGame();
-
-  // Determine the most cost-effective producer: lowest cost per 1/sec production
-  const computeBestValueId = (): string | undefined => {
-    const candidates = producers.filter(u => u.id !== 'manual' && u.productionRate > 0 && u.cost > 0);
-
-    const pickBest = (list: typeof candidates) => {
-      if (list.length === 0) return undefined;
-      let bestId: string | undefined;
-      let bestRatio = Number.POSITIVE_INFINITY;
-      for (const u of list) {
-        const ratio = u.cost / u.productionRate; // cost per 1/sec
-        if (ratio < bestRatio) {
-          bestRatio = ratio;
-          bestId = u.id;
-        }
-      }
-      return bestId;
-    };
-
-    // Always pick the global best, regardless of affordability
-    return pickBest(candidates);
-  };
-
-  const bestValueId = computeBestValueId();
+  const { producers, purchaseProducer, bestValueProducerId } = useGame();
 
   // Replace local formatter with global helper that respects the threshold
   const formatNumber = (num: number): string => formatNumberAdaptive(num, 0, 2);
@@ -56,12 +32,12 @@ export const ProducerList: React.FC = () => {
           .map((producer) => (
             <div
               key={producer.id}
-              className={`producer-card ${producer.canAfford ? 'affordable' : 'unaffordable'} ${bestValueId === producer.id ? 'best-value' : ''}`}
+              className={`producer-card ${producer.canAfford ? 'affordable' : 'unaffordable'} ${bestValueProducerId === producer.id ? 'best-value' : ''}`}
             >
               <div className="producer-header">
                 <h3>{producer.name}</h3>
                 <span className="producer-quantity">Owned: {producer.quantity}</span>
-                {bestValueId === producer.id && (
+                {bestValueProducerId === producer.id && (
                   <span className="best-value-badge" aria-label="Best value producer">Best value</span>
                 )}
               </div>

@@ -38,6 +38,8 @@ export class GameEngine {
   public autoBuyEnabled: boolean;
   private lastUpdate: number;
   private lastAutoBuy: number;
+  private bestValueProducerId: string | undefined;
+  private lastBestValueCalc: number;
 
   constructor() {
     this.resources = 0;
@@ -47,6 +49,8 @@ export class GameEngine {
     this.autoBuyEnabled = false;
     this.lastAutoBuy = Date.now();
     this.producers = this.initializeProducers();
+    this.bestValueProducerId = undefined;
+    this.lastBestValueCalc = 0;
   }
 
   /**
@@ -156,8 +160,50 @@ export class GameEngine {
     producer.totalSpent += cost;
 
     this.updateProductionRate();
+    // Recalculate best value after a purchase
+    this.calculateBestValue();
 
     return true;
+  }
+
+  /**
+   * Calculate best value producer based on BASE cost/production ratio
+   * This uses baseCost (ignoring quantity scaling) for stable recommendations
+   * Only recalculates every 5 seconds or after a purchase
+   */
+  private calculateBestValue(): void {
+    const now = Date.now();
+
+    // Only recalculate if 5 seconds have passed since last calculation
+    if (now - this.lastBestValueCalc < 5000 && this.bestValueProducerId !== undefined) {
+      return;
+    }
+
+    this.lastBestValueCalc = now;
+
+    // Filter valid producers (exclude manual)
+    const candidates = this.producers.filter(
+      p => p.id !== 'manual' && p.productionRate > 0 && p.baseCost > 0
+    );
+
+    if (candidates.length === 0) {
+      this.bestValueProducerId = undefined;
+      return;
+    }
+
+    // Find producer with best BASE cost/production ratio
+    let bestProducer = candidates[0];
+    let bestRatio = bestProducer.baseCost / bestProducer.productionRate;
+
+    for (const producer of candidates) {
+      const ratio = producer.baseCost / producer.productionRate;
+      if (ratio < bestRatio) {
+        bestRatio = ratio;
+        bestProducer = producer;
+      }
+    }
+
+    this.bestValueProducerId = bestProducer.id;
   }
 
   /**
@@ -236,6 +282,9 @@ export class GameEngine {
    * @returns Object containing resources, production rate, and producer info
    */
   getState() {
+    // Ensure best value is calculated (respects 5-second throttle)
+    this.calculateBestValue();
+
     return {
       resources: this.resources,
       productionRate: this.productionRate,
@@ -244,6 +293,7 @@ export class GameEngine {
         cost: this.getProducerCost(u.id),
         canAfford: this.canAffordProducer(u.id)
       })),
+      bestValueProducerId: this.bestValueProducerId,
       autoBuyEnabled: this.autoBuyEnabled,
       autoBuyUnlocked: this.autoBuyUnlocked,
       timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy()
