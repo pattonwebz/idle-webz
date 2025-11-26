@@ -167,9 +167,8 @@ export class GameEngine {
   }
 
   /**
-   * Calculate best value producer based on BASE cost/production ratio
-   * This uses baseCost (ignoring quantity scaling) for stable recommendations
-   * Only recalculates every 5 seconds or after a purchase
+   * Calculate best value producer based on CURRENT cost/production ratio
+   * Only recalculates every 5 seconds or after a purchase for stability
    */
   private calculateBestValue(): void {
     const now = Date.now();
@@ -183,7 +182,7 @@ export class GameEngine {
 
     // Filter valid producers (exclude manual)
     const candidates = this.producers.filter(
-      p => p.id !== 'manual' && p.productionRate > 0 && p.baseCost > 0
+      p => p.id !== 'manual' && p.productionRate > 0
     );
 
     if (candidates.length === 0) {
@@ -191,12 +190,15 @@ export class GameEngine {
       return;
     }
 
-    // Find producer with best BASE cost/production ratio
+    // Find producer with best CURRENT cost/production ratio
     let bestProducer = candidates[0];
-    let bestRatio = bestProducer.baseCost / bestProducer.productionRate;
+    let bestRatio = this.getProducerCost(bestProducer.id) / bestProducer.productionRate;
 
     for (const producer of candidates) {
-      const ratio = producer.baseCost / producer.productionRate;
+      const currentCost = this.getProducerCost(producer.id);
+      if (currentCost <= 0) continue; // Skip if cost is invalid
+
+      const ratio = currentCost / producer.productionRate;
       if (ratio < bestRatio) {
         bestRatio = ratio;
         bestProducer = producer;
