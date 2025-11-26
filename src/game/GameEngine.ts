@@ -34,12 +34,18 @@ export class GameEngine {
   public resources: number;
   public productionRate: number;
   public producers: ProducerTier[];
+  public autoBuyUnlocked: boolean;
+  public autoBuyEnabled: boolean;
   private lastUpdate: number;
+  private lastAutoBuy: number;
 
   constructor() {
     this.resources = 0;
     this.productionRate = 0;
     this.lastUpdate = Date.now();
+    this.autoBuyUnlocked = false;
+    this.autoBuyEnabled = false;
+    this.lastAutoBuy = Date.now();
     this.producers = this.initializeProducers();
   }
 
@@ -184,6 +190,44 @@ export class GameEngine {
       const production = this.productionRate * deltaTime;
       this.resources += production;
     }
+
+    // Auto-buy producers if enabled
+    if (this.autoBuyEnabled) {
+      this.handleAutoBuy(now);
+    }
+  }
+
+  /**
+   * Handle auto-buying of producers
+   * Buys the best value (lowest cost per resource) producer every 30 seconds
+   */
+  private handleAutoBuy(now: number): void {
+    // Check if 30 seconds have passed since last auto-buy
+    const timeSinceLastBuy = now - this.lastAutoBuy;
+    if (timeSinceLastBuy < 30000) return; // 30 seconds = 30000ms
+
+    // Find all affordable producers (excluding manual)
+    const affordableProducers = this.producers.filter(
+      p => this.canAffordProducer(p.id) && p.id !== 'manual'
+    );
+
+    if (affordableProducers.length === 0) return;
+
+    // Find the best value producer (lowest cost per resource produced)
+    let bestProducer = affordableProducers[0];
+    let bestRatio = this.getProducerCost(bestProducer.id) / bestProducer.productionRate;
+
+    for (const producer of affordableProducers) {
+      const ratio = this.getProducerCost(producer.id) / producer.productionRate;
+      if (ratio < bestRatio) {
+        bestRatio = ratio;
+        bestProducer = producer;
+      }
+    }
+
+    // Purchase the best value producer
+    this.purchaseProducer(bestProducer.id);
+    this.lastAutoBuy = now;
   }
 
   /**
@@ -199,8 +243,21 @@ export class GameEngine {
         ...u,
         cost: this.getProducerCost(u.id),
         canAfford: this.canAffordProducer(u.id)
-      }))
+      })),
+      autoBuyEnabled: this.autoBuyEnabled,
+      autoBuyUnlocked: this.autoBuyUnlocked,
+      timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy()
     };
+  }
+
+  /**
+   * Get time remaining until next auto-buy (in seconds)
+   */
+  private getTimeUntilNextAutoBuy(): number {
+    if (!this.autoBuyEnabled) return 0;
+    const timeSinceLastBuy = Date.now() - this.lastAutoBuy;
+    const timeRemaining = Math.max(0, 30000 - timeSinceLastBuy);
+    return Math.ceil(timeRemaining / 1000); // Convert to seconds
   }
 
   /**
@@ -216,7 +273,9 @@ export class GameEngine {
         quantity: u.quantity,
         totalSpent: u.totalSpent
       })),
-      lastUpdate: this.lastUpdate
+      lastUpdate: this.lastUpdate,
+      autoBuyEnabled: this.autoBuyEnabled,
+      autoBuyUnlocked: this.autoBuyUnlocked
     };
   }
 
@@ -227,6 +286,8 @@ export class GameEngine {
     resources?: number;
     producers?: Array<{ id: string; quantity: number; totalSpent?: number }>; // totalSpent optional for backward compatibility
     lastUpdate?: number;
+    autoBuyEnabled?: boolean;
+    autoBuyUnlocked?: boolean;
   }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
@@ -246,6 +307,40 @@ export class GameEngine {
     if (saveData.lastUpdate) {
       this.lastUpdate = saveData.lastUpdate;
     }
+
+    if (saveData.autoBuyEnabled !== undefined) {
+      this.autoBuyEnabled = saveData.autoBuyEnabled;
+    }
+
+    if (saveData.autoBuyUnlocked !== undefined) {
+      this.autoBuyUnlocked = saveData.autoBuyUnlocked;
+    }
+  }
+
+  /**
+   * Unlock the auto-buy feature
+   * @returns true if unlock succeeded
+   */
+  unlockAutoBuy(): boolean {
+    const cost = 10000;
+    if (this.resources < cost || this.autoBuyUnlocked) {
+      return false;
+    }
+
+    this.resources -= cost;
+    this.autoBuyUnlocked = true;
+    return true;
+  }
+
+  /**
+   * Toggle auto-buy on/off
+   */
+  toggleAutoBuy(): void {
+    if (!this.autoBuyUnlocked) return;
+    this.autoBuyEnabled = !this.autoBuyEnabled;
+    if (this.autoBuyEnabled) {
+      this.lastAutoBuy = Date.now();
+    }
   }
 
   /**
@@ -254,6 +349,9 @@ export class GameEngine {
   reset(): void {
     this.resources = 0;
     this.productionRate = 0;
+    this.autoBuyUnlocked = false;
+    this.autoBuyEnabled = false;
+    this.lastAutoBuy = Date.now();
 
     for (const producer of this.producers) {
       producer.quantity = 0;

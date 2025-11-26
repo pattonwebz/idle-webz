@@ -6,6 +6,7 @@ import './App.scss'
 import { GameProvider } from './context/GameContext'
 import { ResourceDisplay } from './components/ResourceDisplay'
 import { ClickButton } from './components/ClickButton'
+import { AutoBuy } from './components/AutoBuy'
 import { ProducerList } from './components/ProducerList'
 import { GameControls } from './components/GameControls'
 
@@ -23,7 +24,10 @@ function App() {
         </header>
         <main className="app-main">
           <ResourceDisplay />
-          <ClickButton />
+          <div className="action-buttons">
+            <ClickButton />
+            <AutoBuy />
+          </div>
           <ProducerList />
         </main>
       </div>

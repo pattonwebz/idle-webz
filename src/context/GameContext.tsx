@@ -28,10 +28,20 @@ export interface GameContextType {
   productionRate: number;
   /** List of all producers with computed properties */
   producers: ProducerInfo[];
+  /** Whether auto-buy is unlocked */
+  autoBuyUnlocked: boolean;
+  /** Whether auto-buy is currently enabled */
+  autoBuyEnabled: boolean;
+  /** Time remaining until next auto-buy (in seconds) */
+  timeUntilNextAutoBuy: number;
   /** Handle manual click action */
   click: () => void;
   /** Attempt to purchase a producer */
   purchaseProducer: (producerId: string) => boolean;
+  /** Unlock auto-buy feature */
+  unlockAutoBuy: () => boolean;
+  /** Toggle auto-buy on/off */
+  toggleAutoBuy: () => void;
   /** Reset all game progress (with confirmation) */
   resetGame: () => void;
 }
@@ -151,12 +161,38 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }
   }, []);
 
+  /**
+   * Unlock auto-buy feature
+   */
+  const unlockAutoBuy = useCallback(() => {
+    if (!gameEngineRef.current) return false;
+    const success = gameEngineRef.current.unlockAutoBuy();
+    if (success) {
+      setGameState(gameEngineRef.current.getState());
+    }
+    return success;
+  }, []);
+
+  /**
+   * Toggle auto-buy on/off
+   */
+  const toggleAutoBuy = useCallback(() => {
+    if (!gameEngineRef.current) return;
+    gameEngineRef.current.toggleAutoBuy();
+    setGameState(gameEngineRef.current.getState());
+  }, []);
+
   const value: GameContextType = {
     resources: gameState.resources,
     productionRate: gameState.productionRate,
     producers: gameState.producers,
+    autoBuyUnlocked: gameState.autoBuyUnlocked,
+    autoBuyEnabled: gameState.autoBuyEnabled,
+    timeUntilNextAutoBuy: gameState.timeUntilNextAutoBuy,
     click,
     purchaseProducer,
+    unlockAutoBuy,
+    toggleAutoBuy,
     resetGame
   };
 
