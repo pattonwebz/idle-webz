@@ -1,4 +1,5 @@
-import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS } from '../constants/gameConstants';
+import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, WORD_BOUNDARIES } from '../constants/gameConstants';
+import { pickRandomChallenge } from '../constants/challenges';
 
 /**
  * Core game engine handling all game logic and state management.
@@ -25,6 +26,8 @@ export interface ProducerTier {
   quantity: number;
   /** Total resources spent on purchasing this producer so far */
   totalSpent: number;
+  /** Resources required to reveal this producer */
+  unlockThreshold?: number;
 }
 
 /**
@@ -41,6 +44,16 @@ export class GameEngine {
   private lastAutoBuy: number;
   private bestValueProducerId: string | undefined;
   private lastBestValueCalc: number;
+  // Typing mechanic state
+  private lastTypedChar: string | null;
+  private consecutiveSameCharCount: number;
+  private streakWords: number; // number of consecutive successful words
+  private wordsTyped: number;
+  private currentWordLength: number;
+  private activeChallenge: { id: string; snippet: string; timeLimitMs: number; startTime: number; progress: number; description: string } | null;
+  private lastChallengeWords: number;
+  private failedChallenges: number;
+  private completedChallenges: number;
 
   constructor() {
     this.resources = 0;
@@ -53,63 +66,74 @@ export class GameEngine {
     this.producers = this.initializeProducers();
     this.bestValueProducerId = undefined;
     this.lastBestValueCalc = 0;
+    // Typing state init
+    this.lastTypedChar = null;
+    this.consecutiveSameCharCount = 0;
+    this.streakWords = 0;
+    this.wordsTyped = 0;
+    this.currentWordLength = 0;
+    this.activeChallenge = null;
+    this.lastChallengeWords = 0;
+    this.failedChallenges = 0;
+    this.completedChallenges = 0;
   }
 
-  /**
-   * Initialize all producer tiers with default values
-   */
+  /** Initialize all producer tiers with dev-themed values */
   private initializeProducers(): ProducerTier[] {
     return [
       {
-        id: 'manual',
-        name: 'Manual Production',
-        description: 'Click to produce resources',
+        id: 'codingSession',
+        name: 'Coding Session',
+        description: 'Write code manually via clicks or typing',
         baseCost: 0,
         costMultiplier: 1,
         productionRate: 1,
         quantity: 0,
-        totalSpent: 0
-      },
-      // Build the rest from constants to keep balance centralized
-      {
-        id: PRODUCER_TIERS.AUTO_CLICKER.id,
-        name: PRODUCER_TIERS.AUTO_CLICKER.name,
-        description: PRODUCER_TIERS.AUTO_CLICKER.description,
-        baseCost: PRODUCER_TIERS.AUTO_CLICKER.baseCost,
-        costMultiplier: DEFAULT_COST_MULTIPLIER,
-        productionRate: PRODUCER_TIERS.AUTO_CLICKER.productionRate,
-        quantity: 0,
-        totalSpent: 0
+        totalSpent: 0,
       },
       {
-        id: PRODUCER_TIERS.FACTORY.id,
-        name: PRODUCER_TIERS.FACTORY.name,
-        description: PRODUCER_TIERS.FACTORY.description,
-        baseCost: PRODUCER_TIERS.FACTORY.baseCost,
+        id: PRODUCER_TIERS.SCRIPT_RUNNER.id,
+        name: PRODUCER_TIERS.SCRIPT_RUNNER.name,
+        description: PRODUCER_TIERS.SCRIPT_RUNNER.description,
+        baseCost: PRODUCER_TIERS.SCRIPT_RUNNER.baseCost,
         costMultiplier: DEFAULT_COST_MULTIPLIER,
-        productionRate: PRODUCER_TIERS.FACTORY.productionRate,
+        productionRate: PRODUCER_TIERS.SCRIPT_RUNNER.productionRate,
         quantity: 0,
-        totalSpent: 0
+        totalSpent: 0,
+        unlockThreshold: PRODUCER_TIERS.SCRIPT_RUNNER.unlockThreshold,
       },
       {
-        id: PRODUCER_TIERS.INDUSTRIAL.id,
-        name: PRODUCER_TIERS.INDUSTRIAL.name,
-        description: PRODUCER_TIERS.INDUSTRIAL.description,
-        baseCost: PRODUCER_TIERS.INDUSTRIAL.baseCost,
+        id: PRODUCER_TIERS.BUILD_SERVER.id,
+        name: PRODUCER_TIERS.BUILD_SERVER.name,
+        description: PRODUCER_TIERS.BUILD_SERVER.description,
+        baseCost: PRODUCER_TIERS.BUILD_SERVER.baseCost,
         costMultiplier: DEFAULT_COST_MULTIPLIER,
-        productionRate: PRODUCER_TIERS.INDUSTRIAL.productionRate,
+        productionRate: PRODUCER_TIERS.BUILD_SERVER.productionRate,
         quantity: 0,
-        totalSpent: 0
+        totalSpent: 0,
+        unlockThreshold: PRODUCER_TIERS.BUILD_SERVER.unlockThreshold,
       },
       {
-        id: PRODUCER_TIERS.MEGA_FACTORY.id,
-        name: PRODUCER_TIERS.MEGA_FACTORY.name,
-        description: PRODUCER_TIERS.MEGA_FACTORY.description,
-        baseCost: PRODUCER_TIERS.MEGA_FACTORY.baseCost,
+        id: PRODUCER_TIERS.CI_PIPELINE.id,
+        name: PRODUCER_TIERS.CI_PIPELINE.name,
+        description: PRODUCER_TIERS.CI_PIPELINE.description,
+        baseCost: PRODUCER_TIERS.CI_PIPELINE.baseCost,
         costMultiplier: DEFAULT_COST_MULTIPLIER,
-        productionRate: PRODUCER_TIERS.MEGA_FACTORY.productionRate,
+        productionRate: PRODUCER_TIERS.CI_PIPELINE.productionRate,
         quantity: 0,
-        totalSpent: 0
+        totalSpent: 0,
+        unlockThreshold: PRODUCER_TIERS.CI_PIPELINE.unlockThreshold,
+      },
+      {
+        id: PRODUCER_TIERS.CLOUD_ORCHESTRATOR.id,
+        name: PRODUCER_TIERS.CLOUD_ORCHESTRATOR.name,
+        description: PRODUCER_TIERS.CLOUD_ORCHESTRATOR.description,
+        baseCost: PRODUCER_TIERS.CLOUD_ORCHESTRATOR.baseCost,
+        costMultiplier: DEFAULT_COST_MULTIPLIER,
+        productionRate: PRODUCER_TIERS.CLOUD_ORCHESTRATOR.productionRate,
+        quantity: 0,
+        totalSpent: 0,
+        unlockThreshold: PRODUCER_TIERS.CLOUD_ORCHESTRATOR.unlockThreshold,
       }
     ];
   }
@@ -120,6 +144,138 @@ export class GameEngine {
    */
   click(): void {
     this.resources += BASE_CLICK_POWER;
+  }
+
+  /** Handle a typed character (optional mechanic) */
+  typeChar(char: string): void {
+    if (this.activeChallenge) {
+      const challenge: any = this.activeChallenge;
+      if (Date.now() - challenge.startTime > challenge.timeLimitMs) {
+        this.failChallenge();
+      } else {
+        if (!challenge.startedOnNewLine) {
+          if (char === '\n') {
+            challenge.startedOnNewLine = true;
+            return; // newline does not produce resources
+          } else {
+            // Allow normal typing before starting the challenge; ignore for challenge progression
+            // Requirement: only fail on wrong char AFTER challenge has started
+          }
+        } else {
+          const expectedChar = challenge.snippet[challenge.progress];
+          if (char === '\n') {
+            this.failChallenge();
+          } else if (char === expectedChar) {
+            challenge.progress++;
+            if (challenge.progress >= challenge.snippet.length) {
+              this.completeChallenge();
+            }
+          } else {
+            this.failChallenge();
+          }
+        }
+      }
+    }
+
+    // Update consecutive same-char tracking
+    if (this.lastTypedChar === char) {
+      this.consecutiveSameCharCount++;
+    } else {
+      this.lastTypedChar = char;
+      this.consecutiveSameCharCount = 1;
+    }
+
+    // Ignore reward for 3rd (or more) consecutive identical character
+    if (this.consecutiveSameCharCount >= 3) {
+      // Still count towards word length (if not boundary) to prevent easy exploit resets
+      if (!WORD_BOUNDARIES.has(char)) {
+        this.currentWordLength++;
+      } else {
+        this.handleWordBoundary();
+      }
+      return;
+    }
+
+    // Reward for valid character
+    if (!WORD_BOUNDARIES.has(char)) {
+      this.resources += TYPING_CONFIG.baseCharValue * this.getCurrentStreakMultiplier();
+      this.currentWordLength++;
+    } else {
+      // Boundary: finalize word
+      this.handleWordBoundary();
+    }
+  }
+
+  /** Calculate current streak multiplier */
+  private getCurrentStreakMultiplier(): number {
+    const multiplier = 1 + this.streakWords * TYPING_CONFIG.streakStep;
+    return Math.min(TYPING_CONFIG.maxStreakMultiplier, multiplier);
+  }
+
+  /** Handle word boundary triggering word completion reward */
+  private handleWordBoundary(): void {
+    if (this.currentWordLength > 0) {
+      this.completeWord();
+    }
+    this.currentWordLength = 0;
+
+    // Auto-trigger challenge when threshold reached and none active
+    if (!this.activeChallenge && this.wordsTyped > 0) {
+      const wordsSinceLast = this.wordsTyped - this.lastChallengeWords;
+      if (wordsSinceLast >= TYPING_CONFIG.wordsPerChallenge) {
+        this.startChallenge();
+      }
+    }
+  }
+
+  /** Complete current word, grant word bonus */
+  private completeWord(): void {
+    this.wordsTyped++;
+    this.streakWords++;
+    const streakMultiplier = this.getCurrentStreakMultiplier();
+    const baseWordValue = this.currentWordLength * TYPING_CONFIG.baseCharValue;
+    const reward = baseWordValue * TYPING_CONFIG.wordBonusMultiplier * streakMultiplier;
+    this.resources += reward;
+  }
+
+  // Mini challenge lifecycle
+  private startChallenge(): void {
+    const def = pickRandomChallenge();
+    this.activeChallenge = {
+      id: def.id,
+      snippet: def.snippet,
+      description: def.description,
+      timeLimitMs: def.timeLimitSeconds * 1000,
+      startTime: Date.now(),
+      progress: 0,
+      // new flag to enforce newline start
+      startedOnNewLine: false
+    } as any; // cast to allow added property without redefining type globally
+    this.lastChallengeWords = this.wordsTyped; // mark baseline
+  }
+  private completeChallenge(): void {
+    if (!this.activeChallenge) return;
+    const length = this.activeChallenge.snippet.length;
+    const streakMultiplier = this.getCurrentStreakMultiplier();
+    const reward = length * TYPING_CONFIG.baseCharValue * TYPING_CONFIG.challengeRewardMultiplier * streakMultiplier;
+    this.resources += reward;
+    this.completedChallenges++;
+    // Small streak boost for success without exceeding cap
+    this.streakWords += 1;
+    this.activeChallenge = null;
+  }
+  private failChallenge(): void {
+    if (!this.activeChallenge) return;
+    this.failedChallenges++;
+    // Reset streak on failure
+    this.streakWords = 0;
+    this.activeChallenge = null;
+  }
+  // Public manual trigger (UI button)
+  public triggerChallenge(): boolean {
+    if (this.activeChallenge) return false;
+    this.startChallenge();
+    return true;
   }
 
   /**
@@ -184,7 +340,7 @@ export class GameEngine {
 
     // Filter valid producers (exclude manual)
     const candidates = this.producers.filter(
-      p => p.id !== 'manual' && p.productionRate > 0
+      p => p.id !== 'codingSession' && p.productionRate > 0
     );
 
     if (candidates.length === 0) {
@@ -218,7 +374,7 @@ export class GameEngine {
     let totalRate = 0;
 
     for (const producer of this.producers) {
-      if (producer.id !== 'manual') {
+      if (producer.id !== 'codingSession') {
         totalRate += producer.productionRate * producer.quantity;
       }
     }
@@ -245,6 +401,11 @@ export class GameEngine {
     if (this.autoBuyEnabled) {
       this.handleAutoBuy(now);
     }
+
+    // Challenge timeout check
+    if (this.activeChallenge && now - this.activeChallenge.startTime > this.activeChallenge.timeLimitMs) {
+      this.failChallenge();
+    }
   }
 
   /**
@@ -259,7 +420,7 @@ export class GameEngine {
 
     // Find all affordable producers (excluding manual)
     const affordableProducers = this.producers.filter(
-      p => this.canAffordProducer(p.id) && p.id !== 'manual'
+      p => this.canAffordProducer(p.id) && p.id !== 'codingSession'
     );
 
     if (affordableProducers.length === 0) return;
@@ -296,7 +457,8 @@ export class GameEngine {
       producers: this.producers.map(u => ({
         ...u,
         cost: this.getProducerCost(u.id),
-        canAfford: this.canAffordProducer(u.id)
+        canAfford: this.canAffordProducer(u.id),
+        unlocked: (u.unlockThreshold === undefined) || this.resources >= (u.unlockThreshold ?? 0)
       })),
       bestValueProducerId: this.bestValueProducerId,
       autoBuyEnabled: this.autoBuyEnabled,
@@ -305,7 +467,24 @@ export class GameEngine {
       autoBuySpeedUpgradeCost: this.getAutoBuySpeedUpgradeCost(),
       canAffordAutoBuySpeedUpgrade: this.canAffordAutoBuySpeedUpgrade(),
       autoBuyInterval: Math.ceil(this.getAutoBuyInterval() / 1000), // in seconds
-      timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy()
+      timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy(),
+      // Typing stats
+      wordsTyped: this.wordsTyped,
+      streakWords: this.streakWords,
+      currentStreakMultiplier: this.getCurrentStreakMultiplier(),
+      // Challenge info
+      challenge: this.activeChallenge ? {
+        id: (this.activeChallenge as any).id,
+        snippet: (this.activeChallenge as any).snippet,
+        description: (this.activeChallenge as any).description,
+        progress: (this.activeChallenge as any).progress,
+        total: (this.activeChallenge as any).snippet.length,
+        timeRemaining: Math.max(0, Math.ceil(((this.activeChallenge as any).timeLimitMs - (Date.now() - (this.activeChallenge as any).startTime)) / 1000)),
+        startedOnNewLine: (this.activeChallenge as any).startedOnNewLine
+      } : null,
+      nextChallengeInWords: this.activeChallenge ? 0 : Math.max(0, TYPING_CONFIG.wordsPerChallenge - (this.wordsTyped - this.lastChallengeWords)),
+      completedChallenges: this.completedChallenges,
+      failedChallenges: this.failedChallenges
     };
   }
 
@@ -328,33 +507,22 @@ export class GameEngine {
   save() {
     return {
       resources: this.resources,
-      producers: this.producers.map(u => ({
-        id: u.id,
-        quantity: u.quantity,
-        totalSpent: u.totalSpent
-      })),
+      producers: this.producers.map(u => ({ id: u.id, quantity: u.quantity, totalSpent: u.totalSpent })),
       lastUpdate: this.lastUpdate,
       autoBuyEnabled: this.autoBuyEnabled,
       autoBuyUnlocked: this.autoBuyUnlocked,
-      autoBuySpeedLevel: this.autoBuySpeedLevel
+      autoBuySpeedLevel: this.autoBuySpeedLevel,
+      // typing stats can be persisted later if needed
     };
   }
 
   /**
    * Load game state from saved data
    */
-  load(saveData: {
-    resources?: number;
-    producers?: Array<{ id: string; quantity: number; totalSpent?: number }>; // totalSpent optional for backward compatibility
-    lastUpdate?: number;
-    autoBuyEnabled?: boolean;
-    autoBuyUnlocked?: boolean;
-    autoBuySpeedLevel?: number;
-  }): void {
+  load(saveData: { resources?: number; producers?: Array<{ id: string; quantity: number; totalSpent?: number }>; lastUpdate?: number; autoBuyEnabled?: boolean; autoBuyUnlocked?: boolean; autoBuySpeedLevel?: number; }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
     }
-
     if (saveData.producers) {
       for (const savedProducer of saveData.producers) {
         const producer = this.producers.find(u => u.id === savedProducer.id);
@@ -365,19 +533,15 @@ export class GameEngine {
       }
       this.updateProductionRate();
     }
-
     if (saveData.lastUpdate) {
       this.lastUpdate = saveData.lastUpdate;
     }
-
     if (saveData.autoBuyEnabled !== undefined) {
       this.autoBuyEnabled = saveData.autoBuyEnabled;
     }
-
     if (saveData.autoBuyUnlocked !== undefined) {
       this.autoBuyUnlocked = saveData.autoBuyUnlocked;
     }
-
     if (saveData.autoBuySpeedLevel !== undefined) {
       this.autoBuySpeedLevel = saveData.autoBuySpeedLevel;
     }
@@ -474,6 +638,19 @@ export class GameEngine {
       producer.quantity = 0;
       producer.totalSpent = 0;
     }
+
+    // Reset typing stats
+    this.lastTypedChar = null;
+    this.consecutiveSameCharCount = 0;
+    this.streakWords = 0;
+    this.wordsTyped = 0;
+    this.currentWordLength = 0;
+
+    // Reset challenge state
+    this.activeChallenge = null;
+    this.lastChallengeWords = 0;
+    this.failedChallenges = 0;
+    this.completedChallenges = 0;
 
     this.lastUpdate = Date.now();
   }

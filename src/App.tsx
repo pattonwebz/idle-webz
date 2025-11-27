@@ -9,6 +9,7 @@ import { ClickButton } from './components/ClickButton'
 import { AutoBuy } from './components/AutoBuy'
 import { ProducerList } from './components/ProducerList'
 import { GameControls } from './components/GameControls'
+import { TypingPanel } from './components/TypingPanel'
 
 /**
  * Main application component
@@ -28,6 +29,7 @@ function App() {
             <ClickButton />
             <AutoBuy />
           </div>
+          <TypingPanel />
           <ProducerList />
         </main>
       </div>

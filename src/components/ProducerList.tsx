@@ -23,13 +23,14 @@ export const ProducerList: React.FC = () => {
     purchaseProducer(producerId);
   };
 
+  const visibleProducers = producers.filter(p => p.id !== 'codingSession' && p.unlocked);
+  const lockedProducers = producers.filter(p => p.id !== 'codingSession' && !p.unlocked).sort((a,b)=> (a.unlockThreshold??0)-(b.unlockThreshold??0));
+
   return (
     <div className="producer-list">
-      <h2>Producers</h2>
+      <h2>Infrastructure & Automation</h2>
       <div className="producers-container">
-        {producers
-          .filter(producer => producer.id !== 'manual')
-          .map((producer) => (
+        {visibleProducers.map((producer) => (
             <div
               key={producer.id}
               className={`producer-card ${producer.canAfford ? 'affordable' : 'unaffordable'} ${bestValueProducerId === producer.id ? 'best-value' : ''}`}
@@ -66,8 +67,10 @@ export const ProducerList: React.FC = () => {
               </button>
             </div>
           ))}
+          {lockedProducers.length > 0 && (
+          <div className="locked-hint" aria-live="polite">Next unlock at {formatNumber(lockedProducers[0].unlockThreshold || 0)} resources: {lockedProducers[0].name}</div>
+        )}
       </div>
     </div>
   );
 };
-

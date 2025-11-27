@@ -1,0 +1,99 @@
+.typing-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #1e1e24;
+  border-radius: 8px;
+  border: 1px solid #2e2e35;
+  color: #eee;
+}
+
+.typing-panel h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.typing-input {
+  width: 100%;
+  min-height: 140px;
+  background: #121217;
+  color: #ddd;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.typing-input:focus {
+  outline: 2px solid #4a7cff;
+}
+
+.typing-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.typing-hint {
+  font-size: 0.7rem;
+  opacity: 0.65;
+  margin: 0;
+}
+
+.challenge-box {
+  background: #262631;
+  border: 1px solid #383842;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.challenge-snippet code {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.75rem;
+}
+
+.challenge-snippet .typed {
+  color: #4a7cff;
+}
+
+.challenge-snippet .remaining {
+  color: #888;
+}
+
+.challenge-meta {
+  display: flex;
+  gap: 1rem;
+  opacity: 0.85;
+}
+
+.challenge-ready {
+  font-size: 0.7rem;
+}
+
+.challenge-trigger {
+  background: #4a7cff;
+  color: #fff;
+  border: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.challenge-trigger:hover {
+  background: #3a6be0;
+}
+
+.challenge-start-hint {
+  font-size: 0.65rem;
+  color: #ffce54;
+}

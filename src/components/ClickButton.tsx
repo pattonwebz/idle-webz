@@ -3,6 +3,7 @@
  */
 
 import { useGame } from '../hooks/useGame';
+import { BASE_CLICK_POWER } from '../constants/gameConstants';
 import './ClickButton.scss';
 
 /**
@@ -11,16 +12,15 @@ import './ClickButton.scss';
  */
 export const ClickButton: React.FC = () => {
   const { click } = useGame();
-
   return (
     <div className="click-button-container">
       <button
         className="click-button"
         onClick={click}
-        aria-label="Click to produce resources"
+        aria-label="Write code (click) to produce resources"
       >
-        <span className="button-text">Produce Resource</span>
-        <span className="button-subtext">+1 per click</span>
+        <span className="button-text">Write Code (Click)</span>
+        <span className="button-subtext">+{BASE_CLICK_POWER} per click | Try typing for combos</span>
       </button>
     </div>
   );

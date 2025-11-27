@@ -16,6 +16,8 @@ import { GAME_UPDATE_FPS } from '../constants/gameConstants';
 interface ProducerInfo extends ProducerTier {
   cost: number;
   canAfford: boolean;
+  unlocked: boolean; // whether producer is visible (unlockThreshold met)
+  unlockThreshold?: number; // resources needed to unlock (optional)
 }
 
 /**
@@ -56,6 +58,24 @@ export interface GameContextType {
   purchaseAutoBuySpeedUpgrade: () => boolean;
   /** Reset all game progress (with confirmation) */
   resetGame: () => void;
+  /** Typing: total words typed */
+  wordsTyped: number;
+  /** Typing: current streak word count */
+  streakWords: number;
+  /** Typing: current streak multiplier */
+  currentStreakMultiplier: number;
+  /** Record a typed character */
+  typeChar: (char: string) => void;
+  /** Current active challenge information */
+  challenge: null | { id: string; snippet: string; description: string; progress: number; total: number; timeRemaining: number; startedOnNewLine: boolean };
+  /** Number of words until the next challenge */
+  nextChallengeInWords: number;
+  /** Total number of completed challenges */
+  completedChallenges: number;
+  /** Total number of failed challenges */
+  failedChallenges: number;
+  /** Trigger a new challenge */
+  triggerChallenge: () => boolean;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -206,6 +226,21 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     return success;
   }, []);
 
+  /**
+   * Record a typed character
+   */
+  const typeChar = useCallback((char: string) => {
+    gameEngineRef.current.typeChar(char);
+    setGameState(gameEngineRef.current.getState());
+  }, []);
+
+  /**
+   * Trigger a new challenge
+   */
+  const triggerChallenge = useCallback(() => {
+    return gameEngineRef.current.triggerChallenge();
+  }, []);
+
   const value: GameContextType = {
     resources: gameState.resources,
     productionRate: gameState.productionRate,
@@ -223,7 +258,18 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     unlockAutoBuy,
     toggleAutoBuy,
     purchaseAutoBuySpeedUpgrade,
-    resetGame
+    resetGame,
+    // Typing additions
+    wordsTyped: gameState.wordsTyped,
+    streakWords: gameState.streakWords,
+    currentStreakMultiplier: gameState.currentStreakMultiplier,
+    typeChar,
+    // Challenge additions
+    challenge: (gameState as any).challenge,
+    nextChallengeInWords: (gameState as any).nextChallengeInWords,
+    completedChallenges: (gameState as any).completedChallenges,
+    failedChallenges: (gameState as any).failedChallenges,
+    triggerChallenge
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
