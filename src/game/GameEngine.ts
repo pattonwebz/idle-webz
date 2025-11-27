@@ -54,6 +54,7 @@ export class GameEngine {
   private lastChallengeWords: number;
   private failedChallenges: number;
   private completedChallenges: number;
+  private unlockedProducers: Set<string>; // Track permanently unlocked producer IDs
 
   constructor() {
     this.resources = 0;
@@ -76,6 +77,7 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
+    this.unlockedProducers = new Set<string>(['codingSession']); // manual always unlocked
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -391,6 +393,16 @@ export class GameEngine {
     const deltaTime = (now - this.lastUpdate) / 1000; // Convert to seconds
     this.lastUpdate = now;
 
+    // Check for newly unlocked producers based on resources
+    for (const producer of this.producers) {
+      if (producer.unlockThreshold !== undefined &&
+          producer.unlockThreshold > 0 &&
+          !this.unlockedProducers.has(producer.id) &&
+          this.resources >= producer.unlockThreshold) {
+        this.unlockedProducers.add(producer.id);
+      }
+    }
+
     // Add resources based on production rate
     if (this.productionRate > 0) {
       const production = this.productionRate * deltaTime;
@@ -458,7 +470,7 @@ export class GameEngine {
         ...u,
         cost: this.getProducerCost(u.id),
         canAfford: this.canAffordProducer(u.id),
-        unlocked: (u.unlockThreshold === undefined) || this.resources >= (u.unlockThreshold ?? 0)
+        unlocked: this.unlockedProducers.has(u.id)
       })),
       bestValueProducerId: this.bestValueProducerId,
       autoBuyEnabled: this.autoBuyEnabled,
@@ -512,14 +524,22 @@ export class GameEngine {
       autoBuyEnabled: this.autoBuyEnabled,
       autoBuyUnlocked: this.autoBuyUnlocked,
       autoBuySpeedLevel: this.autoBuySpeedLevel,
-      // typing stats can be persisted later if needed
+      unlockedProducers: Array.from(this.unlockedProducers),
     };
   }
 
   /**
    * Load game state from saved data
    */
-  load(saveData: { resources?: number; producers?: Array<{ id: string; quantity: number; totalSpent?: number }>; lastUpdate?: number; autoBuyEnabled?: boolean; autoBuyUnlocked?: boolean; autoBuySpeedLevel?: number; }): void {
+  load(saveData: {
+    resources?: number;
+    producers?: Array<{ id: string; quantity: number; totalSpent?: number }>;
+    lastUpdate?: number;
+    autoBuyEnabled?: boolean;
+    autoBuyUnlocked?: boolean;
+    autoBuySpeedLevel?: number;
+    unlockedProducers?: string[];
+  }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
     }
@@ -544,6 +564,9 @@ export class GameEngine {
     }
     if (saveData.autoBuySpeedLevel !== undefined) {
       this.autoBuySpeedLevel = saveData.autoBuySpeedLevel;
+    }
+    if (saveData.unlockedProducers) {
+      this.unlockedProducers = new Set(saveData.unlockedProducers);
     }
   }
 
@@ -651,6 +674,7 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
+    this.unlockedProducers = new Set<string>(['codingSession']);
 
     this.lastUpdate = Date.now();
   }
