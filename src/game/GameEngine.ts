@@ -77,7 +77,8 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
-    this.unlockedProducers = new Set<string>(['codingSession']); // manual always unlocked
+    // Initialize with codingSession and scriptRunner (first tier) unlocked
+    this.unlockedProducers = new Set<string>(['codingSession', 'scriptRunner']);
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -674,7 +675,7 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
-    this.unlockedProducers = new Set<string>(['codingSession']);
+    this.unlockedProducers = new Set<string>(['codingSession', 'scriptRunner']);
 
     this.lastUpdate = Date.now();
   }
