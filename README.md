@@ -24,6 +24,7 @@ A modern, responsive incremental clicker game built with React, TypeScript, and 
 - [Development](#development)
 - [Building](#building)
 - [Documentation](#documentation)
+- [Deploy to GitHub Pages](#deploy-to-github-pages)
 
 ## 🎯 Getting Started
 
@@ -183,3 +184,33 @@ This project is open source and available under the MIT License.
 
 Built with modern web technologies and best practices for game development.
 
+## 🚀 Deploy to GitHub Pages
+
+This project includes an automated GitHub Actions workflow to deploy the production build to GitHub Pages on every push to `main`.
+
+### Setup Steps
+1. Push your code to a GitHub repository and set the default branch to `main`.
+2. Enable GitHub Pages:
+   - Go to Settings → Pages → Build and deployment
+   - Source: GitHub Actions
+3. Verify the workflow file at `.github/workflows/deploy.yml` is present in your repo.
+4. If your repository is served from a subpath (like `https://<user>.github.io/<repo>`), set the Vite base path:
+   - Edit `vite.config.ts` and set `base: '/<repo>/'` (replace `<repo>` with your repository name).
+   - Example:
+     ```ts
+     // vite.config.ts
+     import { defineConfig } from 'vite'
+     import react from '@vitejs/plugin-react'
+
+     export default defineConfig({
+       base: '/my-repo/',
+       plugins: [react()],
+     })
+     ```
+
+### Manual Deployment Trigger
+- You can trigger a manual deploy via the Actions tab → "Deploy to GitHub Pages" → "Run workflow".
+
+### Notes
+- The workflow uses Node.js 18, builds to `dist/`, and publishes using `actions/deploy-pages`.
+- Ensure `npm run build` succeeds locally before pushing.
