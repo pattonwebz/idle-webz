@@ -53,7 +53,7 @@ export const PRODUCER_TIERS = {
     description: 'Automates simple tasks; runs helper scripts (1 res/sec)',
     baseCost: 120,
     productionRate: 1,
-    unlockThreshold: 0, // first tier always visible
+    unlockThreshold: 100, // Unlock at 100 resources
   },
   BUILD_SERVER: {
     id: 'buildServer',

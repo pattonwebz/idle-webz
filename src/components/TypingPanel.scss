@@ -97,3 +97,14 @@
   font-size: 0.65rem;
   color: #ffce54;
 }
+
+.typing-panel.locked {
+  opacity: 0.6;
+  text-align: center;
+}
+
+.unlock-hint {
+  font-size: 0.85rem;
+  color: #ffce54;
+  margin: 0.5rem 0;
+}

@@ -263,6 +263,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     wordsTyped: gameState.wordsTyped,
     streakWords: gameState.streakWords,
     currentStreakMultiplier: gameState.currentStreakMultiplier,
+    typingUnlocked: (gameState as any).typingUnlocked,
     typeChar,
     // Challenge additions
     challenge: (gameState as any).challenge,

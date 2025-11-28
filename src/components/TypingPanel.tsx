@@ -4,7 +4,7 @@ import { useGame } from '../hooks/useGame';
 import './TypingPanel.scss';
 
 export const TypingPanel: FC = () => {
-  const { typeChar, currentStreakMultiplier, streakWords, wordsTyped, challenge, nextChallengeInWords, triggerChallenge } = useGame();
+  const { typeChar, currentStreakMultiplier, streakWords, wordsTyped, challenge, nextChallengeInWords, triggerChallenge, typingUnlocked } = useGame();
   const [inputValue, setInputValue] = useState('');
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -24,6 +24,15 @@ export const TypingPanel: FC = () => {
       setInputValue('');
     }
   }, []);
+
+  if (!typingUnlocked) {
+    return (
+      <div className="typing-panel locked">
+        <h2>Coding Session (Typing) 🔒</h2>
+        <p className="unlock-hint">Unlock at 1,000 resources to enable typing for bonus rewards!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="typing-panel">

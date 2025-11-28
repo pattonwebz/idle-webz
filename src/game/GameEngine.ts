@@ -55,6 +55,7 @@ export class GameEngine {
   private failedChallenges: number;
   private completedChallenges: number;
   private unlockedProducers: Set<string>; // Track permanently unlocked producer IDs
+  private typingUnlocked: boolean; // Track if typing mechanic is unlocked
 
   constructor() {
     this.resources = 0;
@@ -77,8 +78,9 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
-    // Initialize with codingSession and scriptRunner (first tier) unlocked
-    this.unlockedProducers = new Set<string>(['codingSession', 'scriptRunner']);
+    // Initialize with only codingSession unlocked (scriptRunner unlocks at 200 resources)
+    this.unlockedProducers = new Set<string>(['codingSession']);
+    this.typingUnlocked = false;
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -404,6 +406,11 @@ export class GameEngine {
       }
     }
 
+    // Check if typing should be unlocked
+    if (!this.typingUnlocked && this.resources >= 1000) {
+      this.typingUnlocked = true;
+    }
+
     // Add resources based on production rate
     if (this.productionRate > 0) {
       const production = this.productionRate * deltaTime;
@@ -485,6 +492,7 @@ export class GameEngine {
       wordsTyped: this.wordsTyped,
       streakWords: this.streakWords,
       currentStreakMultiplier: this.getCurrentStreakMultiplier(),
+      typingUnlocked: this.typingUnlocked,
       // Challenge info
       challenge: this.activeChallenge ? {
         id: (this.activeChallenge as any).id,
@@ -526,6 +534,7 @@ export class GameEngine {
       autoBuyUnlocked: this.autoBuyUnlocked,
       autoBuySpeedLevel: this.autoBuySpeedLevel,
       unlockedProducers: Array.from(this.unlockedProducers),
+      typingUnlocked: this.typingUnlocked,
     };
   }
 
@@ -540,6 +549,7 @@ export class GameEngine {
     autoBuyUnlocked?: boolean;
     autoBuySpeedLevel?: number;
     unlockedProducers?: string[];
+    typingUnlocked?: boolean;
   }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
@@ -568,6 +578,9 @@ export class GameEngine {
     }
     if (saveData.unlockedProducers) {
       this.unlockedProducers = new Set(saveData.unlockedProducers);
+    }
+    if (saveData.typingUnlocked !== undefined) {
+      this.typingUnlocked = saveData.typingUnlocked;
     }
   }
 
@@ -675,7 +688,8 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
-    this.unlockedProducers = new Set<string>(['codingSession', 'scriptRunner']);
+    this.unlockedProducers = new Set<string>(['codingSession']);
+    this.typingUnlocked = false;
 
     this.lastUpdate = Date.now();
   }
