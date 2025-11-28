@@ -31,6 +31,19 @@ export interface ProducerTier {
 }
 
 /**
+ * Active challenge state with progression tracking
+ */
+interface ActiveChallenge {
+  id: string;
+  snippet: string;
+  description: string;
+  timeLimitMs: number;
+  startTime: number;
+  progress: number;
+  startedOnNewLine: boolean;
+}
+
+/**
  * Main game engine class
  */
 export class GameEngine {
@@ -50,7 +63,7 @@ export class GameEngine {
   private streakWords: number; // number of consecutive successful words
   private wordsTyped: number;
   private currentWordLength: number;
-  private activeChallenge: { id: string; snippet: string; timeLimitMs: number; startTime: number; progress: number; description: string } | null;
+  private activeChallenge: ActiveChallenge | null;
   private lastChallengeWords: number;
   private failedChallenges: number;
   private completedChallenges: number;
@@ -154,7 +167,7 @@ export class GameEngine {
   /** Handle a typed character (optional mechanic) */
   typeChar(char: string): void {
     if (this.activeChallenge) {
-      const challenge: any = this.activeChallenge;
+      const challenge = this.activeChallenge;
       if (Date.now() - challenge.startTime > challenge.timeLimitMs) {
         this.failChallenge();
       } else {
@@ -253,10 +266,9 @@ export class GameEngine {
       timeLimitMs: def.timeLimitSeconds * 1000,
       startTime: Date.now(),
       progress: 0,
-      // new flag to enforce newline start
       startedOnNewLine: false
-    } as any; // cast to allow added property without redefining type globally
-    this.lastChallengeWords = this.wordsTyped; // mark baseline
+    };
+    this.lastChallengeWords = this.wordsTyped;
   }
   private completeChallenge(): void {
     if (!this.activeChallenge) return;
@@ -495,13 +507,13 @@ export class GameEngine {
       typingUnlocked: this.typingUnlocked,
       // Challenge info
       challenge: this.activeChallenge ? {
-        id: (this.activeChallenge as any).id,
-        snippet: (this.activeChallenge as any).snippet,
-        description: (this.activeChallenge as any).description,
-        progress: (this.activeChallenge as any).progress,
-        total: (this.activeChallenge as any).snippet.length,
-        timeRemaining: Math.max(0, Math.ceil(((this.activeChallenge as any).timeLimitMs - (Date.now() - (this.activeChallenge as any).startTime)) / 1000)),
-        startedOnNewLine: (this.activeChallenge as any).startedOnNewLine
+        id: this.activeChallenge.id,
+        snippet: this.activeChallenge.snippet,
+        description: this.activeChallenge.description,
+        progress: this.activeChallenge.progress,
+        total: this.activeChallenge.snippet.length,
+        timeRemaining: Math.max(0, Math.ceil((this.activeChallenge.timeLimitMs - (Date.now() - this.activeChallenge.startTime)) / 1000)),
+        startedOnNewLine: this.activeChallenge.startedOnNewLine
       } : null,
       nextChallengeInWords: this.activeChallenge ? 0 : Math.max(0, TYPING_CONFIG.wordsPerChallenge - (this.wordsTyped - this.lastChallengeWords)),
       completedChallenges: this.completedChallenges,

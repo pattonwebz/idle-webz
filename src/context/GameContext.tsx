@@ -66,6 +66,8 @@ export interface GameContextType {
   currentStreakMultiplier: number;
   /** Record a typed character */
   typeChar: (char: string) => void;
+  /** Whether typing feature is unlocked */
+  typingUnlocked: boolean;
   /** Current active challenge information */
   challenge: null | { id: string; snippet: string; description: string; progress: number; total: number; timeRemaining: number; startedOnNewLine: boolean };
   /** Number of words until the next challenge */
@@ -263,13 +265,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     wordsTyped: gameState.wordsTyped,
     streakWords: gameState.streakWords,
     currentStreakMultiplier: gameState.currentStreakMultiplier,
-    typingUnlocked: (gameState as any).typingUnlocked,
+    typingUnlocked: gameState.typingUnlocked,
     typeChar,
     // Challenge additions
-    challenge: (gameState as any).challenge,
-    nextChallengeInWords: (gameState as any).nextChallengeInWords,
-    completedChallenges: (gameState as any).completedChallenges,
-    failedChallenges: (gameState as any).failedChallenges,
+    challenge: gameState.challenge,
+    nextChallengeInWords: gameState.nextChallengeInWords,
+    completedChallenges: gameState.completedChallenges,
+    failedChallenges: gameState.failedChallenges,
     triggerChallenge
   };
 
