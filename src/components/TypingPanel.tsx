@@ -4,7 +4,7 @@ import { useGame } from '../hooks/useGame';
 import './TypingPanel.scss';
 
 export const TypingPanel: FC = () => {
-  const { typeChar, currentStreakMultiplier, streakWords, wordsTyped, challenge, nextChallengeInWords, triggerChallenge, typingUnlocked } = useGame();
+  const { typeChar, currentStreakMultiplier, streakWords, wordsTyped, challenge, nextChallengeInWords, triggerChallenge, typingUnlocked, challengesUnlocked } = useGame();
   const [inputValue, setInputValue] = useState('');
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -25,11 +25,15 @@ export const TypingPanel: FC = () => {
     }
   }, []);
 
+  const handleKeyUp = useCallback(() => {
+    // No-op now; previously used for cheat tracking
+  }, []);
+
   if (!typingUnlocked) {
     return (
       <div className="typing-panel locked">
         <h2>Coding Session (Typing) 🔒</h2>
-        <p className="unlock-hint">Unlock at 1,000 resources to enable typing for bonus rewards!</p>
+        <p className="unlock-hint">Visit the Upgrades tab to unlock typing for 5,000 resources!</p>
       </div>
     );
   }
@@ -37,7 +41,7 @@ export const TypingPanel: FC = () => {
   return (
     <div className="typing-panel">
       <h2>Coding Session (Typing)</h2>
-      {challenge && (
+      {challengesUnlocked && challenge && (
         <div className="challenge-box" aria-live="polite">
           <div className="challenge-header">
             <strong>Challenge:</strong> {challenge.description} ({challenge.id})
@@ -58,7 +62,7 @@ export const TypingPanel: FC = () => {
           </div>
         </div>
       )}
-      {!challenge && (
+      {challengesUnlocked && !challenge && (
         <div className="challenge-ready" aria-live="polite">
           {nextChallengeInWords === 0 ? (
             <button className="challenge-trigger" onClick={() => triggerChallenge()}>
@@ -74,7 +78,11 @@ export const TypingPanel: FC = () => {
         value={inputValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder="Type code or words here... (bonuses for words & streaks; challenges add big rewards)"
+        onKeyUp={handleKeyUp}
+        placeholder={challengesUnlocked
+          ? "Type code or words here... (bonuses for words & streaks; challenges add big rewards)"
+          : "Type code or words here... (bonuses for words & streaks)"
+        }
         aria-label="Type to produce resources"
       />
       <div className="typing-stats">
@@ -82,7 +90,11 @@ export const TypingPanel: FC = () => {
         <span>Current Streak: {streakWords}</span>
         <span>Streak Multiplier: x{currentStreakMultiplier.toFixed(2)}</span>
       </div>
-      <p className="typing-hint">No reward for the 3rd identical char. Complete words for bonus & streak. Complete mini challenges fast for big rewards.</p>
+      <p className="typing-hint">
+        No reward for the 3rd identical char. Complete words for bonus & streak.
+        {challengesUnlocked && " Complete mini challenges fast for big rewards."}
+        {!challengesUnlocked && " Unlock Challenges in the Upgrades tab for even bigger rewards!"}
+      </p>
     </div>
   );
 };
