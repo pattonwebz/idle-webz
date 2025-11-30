@@ -1,6 +1,6 @@
-# 📖 API Documentation
+# 📖 API Documentation (Idle Webz)
 
-Complete reference for the Incremental Clicker Game codebase.
+Complete reference for the Idle Webz codebase.
 
 ## Table of Contents
 
@@ -33,106 +33,68 @@ Creates a new game engine instance with initial state.
 |----------|------|-------------|
 | `resources` | `number` | Current resource count |
 | `productionRate` | `number` | Resources produced per second |
-| `upgrades` | `UpgradeTier[]` | Array of all upgrade tiers |
+| `producers` | `ProducerTier[]` | Array of producer tiers |
+| `autoBuyEnabled` | `boolean` | Whether auto-buy is enabled |
 
 ### Methods
 
 #### `click(): void`
 
-Awards +1 resource for manual click.
-
-**Example**:
-```typescript
-gameEngine.click();
-// resources += 1
-```
+Awards resources for manual click based on click power level.
 
 ---
 
-#### `getUpgradeCost(upgradeId: string): number`
+#### `typeChar(char: string): void`
 
-Calculate the cost of the next upgrade purchase.
-
-**Parameters**:
-- `upgradeId`: Unique identifier of the upgrade
-
-**Returns**: Cost in resources, or 0 if upgrade not found
-
-**Formula**: `baseCost × (multiplier ^ quantity)`
-
-**Example**:
-```typescript
-const cost = gameEngine.getUpgradeCost('autoClicker');
-// With baseCost=10, multiplier=1.15, quantity=5
-// Returns: 20
-```
+Record a typed character and award typing rewards and word bonuses.
 
 ---
 
-#### `canAffordUpgrade(upgradeId: string): boolean`
+#### `purchaseProducer(id: string): boolean`
 
-Check if player has enough resources for an upgrade.
-
-**Parameters**:
-- `upgradeId`: Unique identifier of the upgrade
-
-**Returns**: `true` if affordable, `false` otherwise
-
-**Example**:
-```typescript
-if (gameEngine.canAffordUpgrade('factory')) {
-  // Player can buy factory
-}
-```
+Attempt to purchase a producer; returns true if successful.
 
 ---
 
 #### `purchaseUpgrade(upgradeId: string): boolean`
 
-Attempt to purchase an upgrade.
-
-**Parameters**:
-- `upgradeId`: Unique identifier of the upgrade
-
-**Returns**: `true` if successful, `false` if insufficient resources
-
-**Side Effects**:
-- Deducts resources
-- Increments upgrade quantity
-- Updates production rate
-
-**Example**:
-```typescript
-const success = gameEngine.purchaseUpgrade('autoClicker');
-if (success) {
-  console.log('Purchase successful!');
-}
-```
+Purchase a one-time upgrade (Typing, Auto-Buy, Challenges).
 
 ---
 
-#### `update(): void`
+#### `purchaseClickPowerUpgrade(): boolean`
 
-Update game state based on elapsed time. Should be called every frame.
+Purchase a repeatable click power upgrade (cost doubles each level).
 
-**Side Effects**:
-- Adds resources based on production rate
-- Updates internal timestamp
+---
 
-**Example**:
-```typescript
-// In game loop
-function gameLoop() {
-  gameEngine.update();
-  requestAnimationFrame(gameLoop);
-}
-```
+#### `purchaseAutoBuySpeedUpgrade(): boolean`
+
+Purchase auto-buy speed (reduces interval by 2s per level, min 2s).
+
+---
+
+#### `toggleAutoBuy(): void`
+
+Enable/disable auto-buy.
+
+---
+
+#### `toggleChallenges(): void`
+
+Enable/disable auto challenges when unlocked.
+
+---
+
+#### `triggerChallenge(): boolean`
+
+Start a challenge manually when available.
 
 ---
 
 #### `getState(): GameState`
 
-Get current game state with computed properties.
+Get current game state with computed properties for UI.
 
 **Returns**: Object with resources, production rate, and upgrade info
 
@@ -200,117 +162,19 @@ gameEngine.reset();
 
 React Context providing game state and actions to components.
 
-### Hook: `useGame()`
-
-Access game context from any component.
-
-**Returns**: `GameContextType`
-
-**Throws**: Error if used outside `GameProvider`
-
-**Example**:
-```typescript
-function MyComponent() {
-  const { resources, click } = useGame();
-  return <button onClick={click}>Resources: {resources}</button>;
-}
-```
-
-### Context Value
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `gameEngine` | `GameEngine` | Direct engine access |
-| `resources` | `number` | Current resources |
-| `productionRate` | `number` | Resources per second |
-| `upgrades` | `UpgradeInfo[]` | Upgrade list with computed data |
-| `click` | `() => void` | Manual click handler |
-| `purchaseUpgrade` | `(id: string) => boolean` | Purchase upgrade |
-| `resetGame` | `() => void` | Reset with confirmation |
+- Provides resources, production rate, producers, and upgrades
+- Exposes actions: click, purchaseProducer, purchaseUpgrade, toggleAutoBuy, etc.
 
 ---
 
 ## Components
 
-### ClickButton
-
-**File**: `src/components/ClickButton.tsx`
-
-Main click button for manual resource production.
-
-**Props**: None
-
-**Features**:
-- Awards +1 resource per click
-- Visual hover and click feedback
-- Responsive sizing
-- Touch-friendly
-
-**Example**:
-```tsx
-<ClickButton />
-```
-
----
-
-### ResourceDisplay
-
-**File**: `src/components/ResourceDisplay.tsx`
-
-Display current resources and production rate.
-
-**Props**: None
-
-**Features**:
-- Auto-formats large numbers
-- Shows resources and production rate
-- Responsive text sizing
-
-**Example**:
-```tsx
-<ResourceDisplay />
-```
-
----
-
-### UpgradeList
-
-**File**: `src/components/UpgradeList.tsx`
-
-Grid of purchasable upgrades.
-
-**Props**: None
-
-**Features**:
-- Shows all available upgrades
-- Visual affordability indicators
-- Displays cost, quantity, and production
-- Responsive grid layout
-
-**Example**:
-```tsx
-<UpgradeList />
-```
-
----
-
-### GameControls
-
-**File**: `src/components/GameControls.tsx`
-
-Settings dropdown menu.
-
-**Props**: None
-
-**Features**:
-- Reset game functionality
-- Click-outside-to-close
-- Confirmation dialogs
-
-**Example**:
-```tsx
-<GameControls />
-```
+- `ResourceDisplay` – shows resources and production rate with format toggle
+- `ClickButton` – manual click action with cheat indicator
+- `AutoBuy` – toggle and status (speed upgrades in Upgrades tab)
+- `TypingPanel` – typing input, streaks, optional challenges
+- `ProducerList` – producer cards, next unlock hint
+- `Upgrades` – one-time unlocks and repeatable upgrades
 
 ---
 
@@ -318,112 +182,19 @@ Settings dropdown menu.
 
 **File**: `src/utils/gameUtils.ts`
 
-### `formatNumber(num: number, decimals?: number): string`
-
-Format number with automatic notation switching.
-
-**Parameters**:
-- `num`: Number to format
-- `decimals`: Decimal places (default: 2)
-
-**Returns**: Formatted string
-
-**Example**:
-```typescript
-formatNumber(123.456)    // "123.46"
-formatNumber(1234567)    // "1.23e+6"
-```
+- `formatNumberUnified` – unified formatting (scientific/suffix) with persisted mode
+- `formatNumberAdaptive`, `formatNumberWithSuffix` – helpers
+- `formatTime` – human-readable time (e.g., auto-buy next purchase)
 
 ---
 
-### `formatNumberWithSuffix(num: number, decimals?: number): string`
+## Constants
 
-Format number with suffix notation (K, M, B, etc.).
+**File**: `src/constants/gameConstants.ts`
 
-**Parameters**:
-- `num`: Number to format
-- `decimals`: Decimal places (default: 2)
-
-**Returns**: Formatted string with suffix
-
-**Example**:
-```typescript
-formatNumberWithSuffix(1234)      // "1.23K"
-formatNumberWithSuffix(1234567)   // "1.23M"
-```
-
----
-
-### `calculateUpgradeCost(baseCost: number, multiplier: number, quantity: number): number`
-
-Calculate upgrade cost at given quantity.
-
-**Parameters**:
-- `baseCost`: Initial cost
-- `multiplier`: Cost multiplier per purchase
-- `quantity`: Current quantity owned
-
-**Returns**: Cost for next purchase
-
-**Example**:
-```typescript
-calculateUpgradeCost(10, 1.15, 5)  // 20
-```
-
----
-
-### `calculateTotalProduction(upgrades: Array<{productionRate: number, quantity: number}>): number`
-
-Calculate total production from upgrades.
-
-**Parameters**:
-- `upgrades`: Array of upgrades with rate and quantity
-
-**Returns**: Total production per second
-
-**Example**:
-```typescript
-const total = calculateTotalProduction([
-  { productionRate: 1, quantity: 5 },
-  { productionRate: 5, quantity: 2 }
-]);
-// Returns: 15
-```
-
----
-
-### `timeUntilAffordable(currentResources: number, cost: number, productionRate: number): number | null`
-
-Calculate time until upgrade is affordable.
-
-**Parameters**:
-- `currentResources`: Current resource count
-- `cost`: Upgrade cost
-- `productionRate`: Current production per second
-
-**Returns**: Seconds until affordable, or null
-
-**Example**:
-```typescript
-timeUntilAffordable(50, 100, 10)  // 5 (seconds)
-```
-
----
-
-### `formatTime(seconds: number): string`
-
-Format seconds into human-readable time.
-
-**Parameters**:
-- `seconds`: Number of seconds
-
-**Returns**: Formatted time string
-
-**Example**:
-```typescript
-formatTime(65)    // "1m 5s"
-formatTime(3665)  // "1h 1m 5s"
-```
+- `UPGRADES` – one-time upgrades (Typing: 3000, Auto-Buy: 5000, Challenges: 20000)
+- `PRODUCER_TIERS` – producer definitions and unlock thresholds
+- `TYPING_CONFIG` – typing rewards and challenge settings
 
 ---
 
@@ -431,12 +202,12 @@ formatTime(3665)  // "1h 1m 5s"
 
 **File**: `src/types/game.types.ts`
 
-### `UpgradeTier`
+### `ProducerTier`
 
-Upgrade configuration and state.
+Producer configuration and state.
 
 ```typescript
-interface UpgradeTier {
+interface ProducerTier {
   id: string;
   name: string;
   description: string;
@@ -493,35 +264,6 @@ interface SaveData {
 
 ---
 
-## Constants
-
-**File**: `src/constants/gameConstants.ts`
-
-### Game Configuration
-
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `AUTO_SAVE_INTERVAL` | `5000` | Auto-save interval (ms) |
-| `SAVE_KEY` | `'incrementalClickerSave'` | localStorage key |
-| `BASE_CLICK_POWER` | `1` | Resources per click |
-| `DEFAULT_COST_MULTIPLIER` | `1.15` | Default cost scaling |
-| `SCIENTIFIC_NOTATION_THRESHOLD` | `1000` | When to use scientific notation |
-
-### Breakpoints
-
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `BREAKPOINTS.MOBILE` | `320` | Mobile breakpoint (px) |
-| `BREAKPOINTS.TABLET` | `768` | Tablet breakpoint (px) |
-| `BREAKPOINTS.DESKTOP` | `1024` | Desktop breakpoint (px) |
-| `BREAKPOINTS.WIDE` | `1440` | Wide screen breakpoint (px) |
-
-### Upgrade Tiers
-
-Predefined upgrade configurations in `UPGRADE_TIERS` object.
-
----
-
 ## Usage Examples
 
 ### Basic Integration
@@ -574,4 +316,3 @@ function AdvancedStats() {
   return <div>Total Upgrades: {totalUpgrades}</div>;
 }
 ```
-

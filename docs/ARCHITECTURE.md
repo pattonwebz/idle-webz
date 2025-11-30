@@ -1,8 +1,8 @@
-# 🏗️ Architecture Documentation
+# 🏗️ Architecture Documentation (Idle Webz)
 
 ## Overview
 
-This incremental clicker game follows a clean architecture pattern with clear separation between UI components, state management, and game logic.
+Idle Webz follows a clean architecture pattern with clear separation between UI components, state management, and game logic.
 
 ## System Architecture
 
@@ -300,4 +300,3 @@ src/
 4. **Type Safety**: Full TypeScript coverage
 5. **Performance**: Efficient updates and rendering
 6. **Maintainability**: Clear structure and documentation
-

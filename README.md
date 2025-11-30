@@ -1,6 +1,6 @@
-# 🎮 Incremental Clicker Game
+# 🕸️ Idle Webz
 
-A modern, responsive incremental clicker game built with React, TypeScript, and Vite. Click to produce resources, purchase upgrades, and watch your production empire grow!
+A modern, responsive idle/incremental web dev-themed game built with React, TypeScript, and Vite. Click or type to produce resources, purchase upgrades, and scale your automation pipeline!
 
 ![Version](https://img.shields.io/badge/version-0.0.0-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
@@ -8,11 +8,11 @@ A modern, responsive incremental clicker game built with React, TypeScript, and 
 
 ## 🚀 Features
 
-- **Incremental Gameplay**: Click to produce resources and purchase upgrades
-- **Auto-Production**: Unlock automatic resource generation
-- **Save System**: Automatic save every 5 seconds with localStorage persistence
-- **Responsive Design**: Fully optimized for mobile, tablet, and desktop
-- **Clean Architecture**: Well-organized code with Context API for state management
+- **Idle/Incremental Gameplay**: Click or type to produce resources and purchase upgrades
+- **Auto-Production**: Unlock automatic resource generation and speed upgrades
+- **Save System**: Automatic save with localStorage persistence
+- **Responsive Design**: Optimized for mobile, tablet, and desktop
+- **Clean Architecture**: Context API for state management and a framework-agnostic game engine
 - **Type Safety**: Full TypeScript implementation
 - **Performance**: Optimized game loop using requestAnimationFrame
 
@@ -54,27 +54,27 @@ The game will be available at `http://localhost:5173`
 ## 🎲 Game Mechanics
 
 ### Resources
-- Start by manually clicking the "Produce Resource" button (+1 per click)
-- Purchase upgrades to generate resources automatically
-- Resources accumulate even when you're not actively playing
+- Start by manually clicking the main button or typing characters to earn resources
+- Purchase producers to generate resources automatically
+- Resources accumulate based on production rate
 
 ### Upgrades
-The game features 5 tiers of production upgrades:
+The game features a dedicated Upgrades tab:
 
-1. **Auto Clicker** (10 resources) - Produces 1/sec
-2. **Factory** (100 resources) - Produces 5/sec
-3. **Industrial Complex** (1,000 resources) - Produces 25/sec
-4. **Mega Factory** (10,000 resources) - Produces 100/sec
+- **Typing Mechanic** (cost: 3000) – Unlock typing-based resource generation with word/streak bonuses
+- **Auto-Buy** (cost: 5000) – Unlock automatic purchases of the best value producer
+- **Code Challenges** (cost: 20000) – Unlock mini typing challenges for big rewards (visible after Typing is purchased)
+- **Repeatables** – Click Power (doubles per level, cost doubles each time), Auto-Buy Speed (-2s per level, min 2s)
 
-Each upgrade's cost increases by 15% with each purchase, following the formula:
+Producers follow exponential cost scaling:
 ```
-Cost = BaseCost × (1.15 ^ Quantity)
+Cost = BaseCost × (multiplier ^ Quantity)
 ```
 
 ### Saving
-- Game auto-saves every 5 seconds to localStorage
-- Progress persists across browser sessions
-- Manual reset available in Settings menu
+- Game auto-saves at a fixed interval to localStorage
+- Progress persists across sessions
+- Manual reset available via Game Controls
 
 ## 🏗️ Architecture
 
@@ -84,26 +84,28 @@ Cost = BaseCost × (1.15 ^ Quantity)
 src/
 ├── components/          # React UI components
 │   ├── ClickButton.tsx       # Main click button
-│   ├── ResourceDisplay.tsx   # Resource counter display
-│   ├── UpgradeList.tsx       # Upgrade cards grid
-│   └── GameControls.tsx      # Settings menu
+│   ├── ResourceDisplay.tsx   # Resource & rate display
+│   ├── Upgrades.tsx          # Upgrades tab
+│   ├── AutoBuy.tsx           # Auto-buy toggle
+│   ├── TypingPanel.tsx       # Typing mechanics & challenges
+│   └── ProducerList.tsx      # Producer cards grid
 ├── context/            # React Context providers
 │   └── GameContext.tsx       # Game state management
 ├── game/               # Core game logic
 │   └── GameEngine.ts         # Game state & calculations
-├── utils/              # Utility functions (to be added)
-├── types/              # TypeScript type definitions (to be added)
+├── utils/              # Utility functions
+├── types/              # TypeScript type definitions
 ├── App.tsx             # Main app component
 └── main.tsx            # App entry point
 ```
 
 ### Tech Stack
 
-- **React 19** - UI framework
-- **TypeScript 5.9** - Type safety
-- **Vite 7** - Build tool and dev server
-- **Context API** - State management
-- **CSS3** - Styling with gradients and animations
+- **React 19** – UI framework
+- **TypeScript 5.9** – Type safety
+- **Vite 7** – Build tool and dev server
+- **Context API** – State management
+- **SCSS** – Styling with gradients and animations
 
 ### Design Patterns
 
@@ -120,7 +122,7 @@ src/
 # Development server with HMR
 npm run dev
 
-# Type checking
+# Type checking & build
 npm run build
 
 # Lint code
@@ -135,7 +137,6 @@ npm run preview
 - Follow TypeScript best practices
 - Use functional components with hooks
 - Maintain separation between UI and business logic
-- Add JSDoc comments for public APIs
 - Keep components small and focused
 
 ### Adding New Features
@@ -156,14 +157,14 @@ The production build is optimized and minified, ready for deployment to any stat
 ## 📚 Documentation
 
 ### Quick Links
-- **[QUICKSTART.md](./QUICKSTART.md)** - ⚡ Start here! Quick reference guide
-- **[docs/IMPROVEMENTS.md](./docs/IMPROVEMENTS.md)** - 📋 Summary of all improvements made
+- **[QUICKSTART.md](./QUICKSTART.md)** – ⚡ Quick reference guide
+- **[docs/IMPROVEMENTS.md](./docs/IMPROVEMENTS.md)** – 📋 Summary of improvements
 
 ### Detailed Guides
-- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - 🏗️ Technical architecture and design patterns
-- **[docs/API.md](./docs/API.md)** - 📖 Complete API reference
-- **[docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md)** - 🤝 How to contribute to the project
-- **[docs/suggestions.md](./docs/suggestions.md)** - 💡 Feature ideas and roadmap
+- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** – 🏗️ Technical architecture and design patterns
+- **[docs/API.md](./docs/API.md)** – 📖 API reference
+- **[docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md)** – 🤝 Contributing guidelines
+- **[docs/suggestions.md](./docs/suggestions.md)** – 💡 Feature ideas and roadmap
 
 ## 🎨 Responsive Design
 
@@ -186,7 +187,7 @@ Built with modern web technologies and best practices for game development.
 
 ## 🚀 Deploy to GitHub Pages
 
-This project includes an automated GitHub Actions workflow to deploy the production build to GitHub Pages on every push to `main`.
+This project can be deployed to GitHub Pages via an Actions workflow.
 
 ### Setup Steps
 1. Push your code to a GitHub repository and set the default branch to `main`.
@@ -196,21 +197,3 @@ This project includes an automated GitHub Actions workflow to deploy the product
 3. Verify the workflow file at `.github/workflows/deploy.yml` is present in your repo.
 4. If your repository is served from a subpath (like `https://<user>.github.io/<repo>`), set the Vite base path:
    - Edit `vite.config.ts` and set `base: '/<repo>/'` (replace `<repo>` with your repository name).
-   - Example:
-     ```ts
-     // vite.config.ts
-     import { defineConfig } from 'vite'
-     import react from '@vitejs/plugin-react'
-
-     export default defineConfig({
-       base: '/my-repo/',
-       plugins: [react()],
-     })
-     ```
-
-### Manual Deployment Trigger
-- You can trigger a manual deploy via the Actions tab → "Deploy to GitHub Pages" → "Run workflow".
-
-### Notes
-- The workflow uses Node.js 18, builds to `dist/`, and publishes using `actions/deploy-pages`.
-- Ensure `npm run build` succeeds locally before pushing.
