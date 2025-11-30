@@ -69,7 +69,7 @@ export const ProducerList: React.FC = () => {
             </div>
           ))}
           {lockedProducers.length > 0 && (
-          <NextUnlockHint lockedProducers={lockedProducers as any} />
+          <NextUnlockHint lockedProducers={lockedProducers} />
         )}
       </div>
     </div>

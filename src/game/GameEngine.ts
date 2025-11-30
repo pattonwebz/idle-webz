@@ -1,6 +1,7 @@
 import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, WORD_BOUNDARIES, UPGRADES } from '../constants/gameConstants';
 import { pickRandomChallenge } from '../constants/challenges';
 import { AutoBuyer } from './autobuy/AutoBuyer';
+import { TypingEngine } from './typing/TypingEngine';
 
 /**
  * Core game engine handling all game logic and state management.
@@ -73,6 +74,7 @@ export class GameEngine {
   private clickPowerLevel: number; // repeatable click power upgrade level
   private challengesEnabled: boolean; // whether auto-challenges are enabled
   private autoBuyer: AutoBuyer;
+  private typing: TypingEngine;
 
   constructor() {
     this.resources = 0;
@@ -100,6 +102,7 @@ export class GameEngine {
     this.clickPowerLevel = 0;
     this.challengesEnabled = true;
     this.autoBuyer = new AutoBuyer();
+    this.typing = new TypingEngine();
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -183,94 +186,7 @@ export class GameEngine {
 
   /** Handle a typed character (optional mechanic) */
   typeChar(char: string): void {
-    if (this.activeChallenge) {
-      const challenge = this.activeChallenge;
-      if (Date.now() - challenge.startTime > challenge.timeLimitMs) {
-        this.failChallenge();
-      } else {
-        if (!challenge.startedOnNewLine) {
-          if (char === '\n') {
-            challenge.startedOnNewLine = true;
-            return; // newline does not produce resources
-          } else {
-            // Allow normal typing before starting the challenge; ignore for challenge progression
-            // Requirement: only fail on wrong char AFTER challenge has started
-          }
-        } else {
-          const expectedChar = challenge.snippet[challenge.progress];
-          if (char === '\n') {
-            this.failChallenge();
-          } else if (char === expectedChar) {
-            challenge.progress++;
-            if (challenge.progress >= challenge.snippet.length) {
-              this.completeChallenge();
-            }
-          } else {
-            this.failChallenge();
-          }
-        }
-      }
-    }
-
-    // Update consecutive same-char tracking
-    if (this.lastTypedChar === char) {
-      this.consecutiveSameCharCount++;
-    } else {
-      this.lastTypedChar = char;
-      this.consecutiveSameCharCount = 1;
-    }
-
-    // Ignore reward for 3rd (or more) consecutive identical character
-    if (this.consecutiveSameCharCount >= 3) {
-      // Still count towards word length (if not boundary) to prevent easy exploit resets
-      if (!WORD_BOUNDARIES.has(char)) {
-        this.currentWordLength++;
-      } else {
-        this.handleWordBoundary();
-      }
-      return;
-    }
-
-    // Reward for valid character
-    if (!WORD_BOUNDARIES.has(char)) {
-      this.resources += TYPING_CONFIG.baseCharValue * this.getCurrentStreakMultiplier();
-      this.currentWordLength++;
-    } else {
-      // Boundary: finalize word
-      this.handleWordBoundary();
-    }
-  }
-
-  /** Calculate current streak multiplier */
-  private getCurrentStreakMultiplier(): number {
-    const multiplier = 1 + this.streakWords * TYPING_CONFIG.streakStep;
-    return Math.min(TYPING_CONFIG.maxStreakMultiplier, multiplier);
-  }
-
-  /** Handle word boundary triggering word completion reward */
-  private handleWordBoundary(): void {
-    if (this.currentWordLength > 0) {
-      this.completeWord();
-    }
-    this.currentWordLength = 0;
-
-    // Auto-trigger challenge when threshold reached, none active, challenges are unlocked AND enabled
-    if (this.challengesEnabled && this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id) && !this.activeChallenge && this.wordsTyped > 0) {
-      const wordsSinceLast = this.wordsTyped - this.lastChallengeWords;
-      if (wordsSinceLast >= TYPING_CONFIG.wordsPerChallenge) {
-        this.startChallenge();
-      }
-    }
-  }
-
-  /** Complete current word, grant word bonus */
-  private completeWord(): void {
-    this.wordsTyped++;
-    this.streakWords++;
-    const streakMultiplier = this.getCurrentStreakMultiplier();
-    const baseWordValue = this.currentWordLength * TYPING_CONFIG.baseCharValue;
-    const reward = baseWordValue * TYPING_CONFIG.wordBonusMultiplier * streakMultiplier;
-    this.resources += reward;
+    this.typing.handleChar(char, (val) => { this.resources += val; });
   }
 
   // Mini challenge lifecycle
@@ -307,9 +223,7 @@ export class GameEngine {
   }
   // Public manual trigger (UI button)
   public triggerChallenge(): boolean {
-    if (this.activeChallenge) return false;
-    this.startChallenge();
-    return true;
+    return this.typing.triggerChallenge();
   }
 
   /**
@@ -503,25 +417,7 @@ export class GameEngine {
       // Upgrades
       upgrades: this.getUpgrades(),
       // Typing stats
-      wordsTyped: this.wordsTyped,
-      streakWords: this.streakWords,
-      currentStreakMultiplier: this.getCurrentStreakMultiplier(),
-      typingUnlocked: this.purchasedUpgrades.has(UPGRADES.TYPING.id),
-      challengesUnlocked: this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id),
-      // Challenge info
-      challenge: this.activeChallenge ? {
-        id: this.activeChallenge.id,
-        snippet: this.activeChallenge.snippet,
-        description: this.activeChallenge.description,
-        progress: this.activeChallenge.progress,
-        total: this.activeChallenge.snippet.length,
-        timeRemaining: Math.max(0, Math.ceil((this.activeChallenge.timeLimitMs - (Date.now() - this.activeChallenge.startTime)) / 1000)),
-        startedOnNewLine: this.activeChallenge.startedOnNewLine
-      } : null,
-      nextChallengeInWords: this.activeChallenge ? 0 : Math.max(0, TYPING_CONFIG.wordsPerChallenge - (this.wordsTyped - this.lastChallengeWords)),
-      completedChallenges: this.completedChallenges,
-      failedChallenges: this.failedChallenges,
-      challengesEnabled: this.challengesEnabled,
+      ...this.typing.getUIState(),
       // Click power upgrade info
       clickPowerLevel: this.clickPowerLevel,
       clickValue: this.getClickValue(),
@@ -609,6 +505,7 @@ export class GameEngine {
     }
     if (saveData.challengesEnabled !== undefined) {
       this.challengesEnabled = saveData.challengesEnabled;
+      this.typing.setChallengesEnabled(this.challengesEnabled);
     }
     // Migrate old save format
     if (saveData.autoBuyUnlocked) {
@@ -744,6 +641,7 @@ export class GameEngine {
   toggleChallenges(): void {
     if (!this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id)) return;
     this.challengesEnabled = !this.challengesEnabled;
+    this.typing.setChallengesEnabled(this.challengesEnabled);
   }
 
   /**
