@@ -94,13 +94,13 @@ export const UPGRADES = {
     id: 'typing',
     name: 'Typing Mechanic',
     description: 'Unlock the ability to type code instead of clicking. Earn bonuses for words and streaks!',
-    cost: 5000,
+    cost: 3000,
   },
   AUTO_BUY: {
     id: 'autoBuy',
     name: 'Auto-Buy',
     description: 'Automatically purchase producers when you can afford them',
-    cost: 3000,
+    cost: 5000,
   },
   CHALLENGES: {
     id: 'challenges',
@@ -109,4 +109,3 @@ export const UPGRADES = {
     cost: 20000,
   },
 } as const;
-
