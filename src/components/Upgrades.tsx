@@ -3,7 +3,6 @@
  */
 
 import { useGame } from '../hooks/useGame';
-import { formatNumberAdaptive } from '../utils/gameUtils';
 import './Upgrades.scss';
 import { RepeatableCard } from './Upgrades/RepeatableCard';
 import { OneTimeCard } from './Upgrades/OneTimeCard';
