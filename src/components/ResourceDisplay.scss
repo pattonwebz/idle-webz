@@ -28,6 +28,17 @@
     font-family: 'Courier New', monospace;
     word-break: break-all;
   }
+
+  .format-toggle {
+    margin-top: 0.5rem;
+    background: #1f2937;
+    color: #f9fafb;
+    border: 1px solid #4b5563;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
 }
 
 .resource-count,
@@ -47,4 +58,3 @@
     margin-bottom: 0;
   }
 }
-

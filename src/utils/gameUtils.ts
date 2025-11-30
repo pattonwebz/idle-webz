@@ -194,3 +194,41 @@ export function formatTime(seconds: number): string {
 
   return parts.join(' ');
 }
+
+export type NumberFormatMode = 'scientific' | 'suffix';
+const NUMBER_FORMAT_MODE_KEY = 'numberFormatMode';
+
+export function getNumberFormatMode(): NumberFormatMode {
+  const raw = localStorage.getItem(NUMBER_FORMAT_MODE_KEY);
+  return raw === 'suffix' || raw === 'scientific' ? (raw as NumberFormatMode) : 'scientific';
+}
+
+export function setNumberFormatMode(mode: NumberFormatMode): void {
+  localStorage.setItem(NUMBER_FORMAT_MODE_KEY, mode);
+}
+
+/**
+ * Unified number formatting based on selected mode.
+ * - scientific: uses formatNumberAdaptive/formatNumber
+ * - suffix: uses formatNumberWithSuffix
+ */
+export function formatNumberUnified(
+  num: number,
+  mode: NumberFormatMode = getNumberFormatMode(),
+  smallDecimals = 2,
+  largeDecimals = 2
+): string {
+  if (mode === 'suffix') {
+    return formatNumberWithSuffix(num, smallDecimals);
+  }
+  return formatNumberAdaptive(num, smallDecimals, largeDecimals);
+}
+
+/** Exact formatting for tooltips */
+export function formatExact(num: number): string {
+  // Show up to 6 decimals for small numbers, full exponential for large
+  if (num < SCIENTIFIC_NOTATION_THRESHOLD) {
+    return num.toFixed(6);
+  }
+  return num.toExponential(6);
+}
