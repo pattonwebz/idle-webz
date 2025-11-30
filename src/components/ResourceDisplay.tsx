@@ -5,6 +5,7 @@
 import { useGame } from '../hooks/useGame';
 import './ResourceDisplay.scss';
 import { formatNumberUnified, getNumberFormatMode, setNumberFormatMode } from '../utils/gameUtils';
+import * as React from "react";
 
 /**
  * Shows the player's current resource count and production rate per second
