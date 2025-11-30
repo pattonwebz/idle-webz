@@ -25,8 +25,8 @@ export const Upgrades: React.FC = () => {
         {/* Click Power repeatable upgrade */}
         <div className={`upgrade-card repeatable ${canAffordClickPowerUpgrade ? 'affordable' : ''}`}>
           <div className="upgrade-header">
-            <h3 className="upgrade-name">Click Power</h3>
-            <span className="upgrade-level">Level {clickPowerLevel}</span>
+            <h3 className="upgrade-name">⚙️ Click Power</h3>
+            <span className="upgrade-level badge">Lvl {clickPowerLevel}</span>
           </div>
           <p className="upgrade-description">Increase manual click value (current: +{clickValue} per click). Each level doubles click value. Cost doubles each purchase.</p>
           <div className="upgrade-footer">
@@ -37,7 +37,7 @@ export const Upgrades: React.FC = () => {
               aria-label="Purchase Click Power upgrade"
             >
               <span className="button-text">Upgrade</span>
-              <span className="button-cost">Cost: {formatNumberAdaptive(clickPowerUpgradeCost, 0, 1)}</span>
+              <span className="button-cost pill">{formatNumberAdaptive(clickPowerUpgradeCost, 0, 1)}</span>
             </button>
           </div>
         </div>
@@ -46,8 +46,8 @@ export const Upgrades: React.FC = () => {
         {autoBuyUnlocked && (
           <div className={`upgrade-card repeatable ${canAffordAutoBuySpeedUpgrade ? 'affordable' : ''}`}>
             <div className="upgrade-header">
-              <h3 className="upgrade-name">Auto-Buy Speed</h3>
-              <span className="upgrade-level">Level {autoBuySpeedLevel}</span>
+              <h3 className="upgrade-name">⚡ Auto-Buy Speed</h3>
+              <span className="upgrade-level badge">Lvl {autoBuySpeedLevel}</span>
             </div>
             <p className="upgrade-description">Reduce auto-buy interval by 2s per level (min 2s). Current interval depends on level.</p>
             <div className="upgrade-footer">
@@ -58,7 +58,7 @@ export const Upgrades: React.FC = () => {
                 aria-label="Purchase Auto-Buy Speed upgrade"
               >
                 <span className="button-text">Upgrade</span>
-                <span className="button-cost">Cost: {formatNumberAdaptive(autoBuySpeedUpgradeCost, 0, 1)}</span>
+                <span className="button-cost pill">{formatNumberAdaptive(autoBuySpeedUpgradeCost, 0, 1)}</span>
               </button>
             </div>
           </div>
@@ -71,8 +71,8 @@ export const Upgrades: React.FC = () => {
             className={`upgrade-card ${upgrade.purchased ? 'purchased' : ''} ${upgrade.canAfford && !upgrade.purchased ? 'affordable' : ''}`}
           >
             <div className="upgrade-header">
-              <h3 className="upgrade-name">{upgrade.name}</h3>
-              {upgrade.purchased && <span className="purchased-badge">✓ Owned</span>}
+              <h3 className="upgrade-name">{upgrade.id === 'typing' ? '⌨️ ' : upgrade.id === 'autoBuy' ? '🤖 ' : upgrade.id === 'challenges' ? '🎯 ' : ''}{upgrade.name}</h3>
+              {upgrade.purchased && <span className="purchased-badge badge">✓ Owned</span>}
             </div>
             <p className="upgrade-description">{upgrade.description}</p>
             <div className="upgrade-footer">
@@ -84,7 +84,7 @@ export const Upgrades: React.FC = () => {
                   aria-label={`Purchase ${upgrade.name}`}
                 >
                   <span className="button-text">Purchase</span>
-                  <span className="button-cost">{formatNumberAdaptive(upgrade.cost, 0, 1)} resources</span>
+                  <span className="button-cost pill">{formatNumberAdaptive(upgrade.cost, 0, 1)}</span>
                 </button>
               ) : (
                 <div className="purchased-status">
