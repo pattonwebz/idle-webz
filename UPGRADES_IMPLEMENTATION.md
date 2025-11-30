@@ -8,7 +8,7 @@ Successfully implemented a dedicated upgrades tab with purchasable one-time upgr
 ### 1. Game Constants (`gameConstants.ts`)
 - Added `UPGRADES` constant with three purchasable upgrades:
   - **Typing Mechanic**: 5,000 resources - Unlocks typing gameplay
-  - **Auto-Buy**: 3,000 resources (changed from 1,000) - Unlocks automatic producer purchasing  
+  - **Auto-Buy**: 3,000 resources - Unlocks automatic producer purchasing  
   - **Challenges**: 20,000 resources - Unlocks typing challenges
 
 ### 2. Game Engine (`GameEngine.ts`)
@@ -49,7 +49,7 @@ Successfully implemented a dedicated upgrades tab with purchasable one-time upgr
 - Responsive tab buttons for mobile
 
 ## Game Balance Changes
-- **Auto-Buy cost**: Reduced from 10,000 to 3,000 to make it more accessible
+- **Auto-Buy cost**: Set to 3,000 resources (affordable early-mid game)
 - **Typing unlock**: Now costs 5,000 instead of auto-unlocking at 200 resources
 - **Challenges**: Requires 20,000 resources to unlock (only shows if typing is owned)
 
