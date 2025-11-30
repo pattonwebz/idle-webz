@@ -32,8 +32,6 @@ export interface GameContextType {
   producers: ProducerInfo[];
   /** ID of the producer with the best base value (cost/production ratio) */
   bestValueProducerId: string | undefined;
-  /** Whether auto-buy is unlocked */
-  autoBuyUnlocked: boolean;
   /** Whether auto-buy is currently enabled */
   autoBuyEnabled: boolean;
   /** Current auto-buy speed upgrade level */
@@ -50,8 +48,6 @@ export interface GameContextType {
   click: () => void;
   /** Attempt to purchase a producer */
   purchaseProducer: (producerId: string) => boolean;
-  /** Unlock auto-buy feature */
-  unlockAutoBuy: () => boolean;
   /** Toggle auto-buy on/off */
   toggleAutoBuy: () => void;
   /** Purchase auto-buy speed upgrade */
@@ -68,6 +64,8 @@ export interface GameContextType {
   typeChar: (char: string) => void;
   /** Whether typing feature is unlocked */
   typingUnlocked: boolean;
+  /** Whether challenges feature is unlocked */
+  challengesUnlocked: boolean;
   /** Current active challenge information */
   challenge: null | { id: string; snippet: string; description: string; progress: number; total: number; timeRemaining: number; startedOnNewLine: boolean };
   /** Number of words until the next challenge */
@@ -78,6 +76,19 @@ export interface GameContextType {
   failedChallenges: number;
   /** Trigger a new challenge */
   triggerChallenge: () => boolean;
+  /** Available upgrades with purchase status */
+  upgrades: Array<{ id: string; name: string; description: string; cost: number; purchased: boolean; canAfford: boolean }>;
+  /** Purchase an upgrade */
+  purchaseUpgrade: (upgradeId: string) => boolean;
+  /** Click power repeatable upgrade data */
+  clickPowerLevel: number;
+  clickValue: number;
+  clickPowerUpgradeCost: number;
+  canAffordClickPowerUpgrade: boolean;
+  /** Purchase repeatable click power upgrade */
+  purchaseClickPowerUpgrade: () => boolean;
+  /** Whether cheat combo (A+T) is currently held */
+  cheatActive: boolean;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -99,6 +110,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
   const [gameState, setGameState] = useState(() => gameEngine.getState());
   const animationFrameRef = useRef<number | undefined>(undefined);
+  const [cheatActive, setCheatActive] = useState(false);
 
   /**
    * Load saved game on mount
@@ -162,7 +174,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   /**
    * Handle manual click action
    */
-  const click = useCallback(() => {
+  const click: () => void = useCallback(() => {
     if (gameEngineRef.current) {
       gameEngineRef.current.click();
       setGameState(gameEngineRef.current.getState());
@@ -174,7 +186,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
    * @param producerId - Unique identifier of the producer
    * @returns True if purchase succeeded
    */
-  const purchaseProducer = useCallback((producerId: string): boolean => {
+  const purchaseProducer: (producerId: string) => boolean = useCallback((producerId: string) => {
     if (!gameEngineRef.current) return false;
     const success = gameEngineRef.current.purchaseProducer(producerId);
     if (success) {
@@ -186,7 +198,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   /**
    * Reset game progress with confirmation dialog
    */
-  const resetGame = useCallback(() => {
+  const resetGame: () => void = useCallback(() => {
     if (!gameEngineRef.current) return;
     if (window.confirm('Are you sure you want to reset all progress? This cannot be undone!')) {
       gameEngineRef.current.reset();
@@ -196,11 +208,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * Unlock auto-buy feature
+   * Purchase an upgrade
    */
-  const unlockAutoBuy = useCallback(() => {
+  const purchaseUpgrade: (upgradeId: string) => boolean = useCallback((upgradeId: string) => {
     if (!gameEngineRef.current) return false;
-    const success = gameEngineRef.current.unlockAutoBuy();
+    const success = gameEngineRef.current.purchaseUpgrade(upgradeId);
     if (success) {
       setGameState(gameEngineRef.current.getState());
     }
@@ -210,7 +222,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   /**
    * Toggle auto-buy on/off
    */
-  const toggleAutoBuy = useCallback(() => {
+  const toggleAutoBuy: () => void = useCallback(() => {
     if (!gameEngineRef.current) return;
     gameEngineRef.current.toggleAutoBuy();
     setGameState(gameEngineRef.current.getState());
@@ -219,7 +231,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   /**
    * Purchase auto-buy speed upgrade
    */
-  const purchaseAutoBuySpeedUpgrade = useCallback(() => {
+  const purchaseAutoBuySpeedUpgrade: () => boolean = useCallback(() => {
     if (!gameEngineRef.current) return false;
     const success = gameEngineRef.current.purchaseAutoBuySpeedUpgrade();
     if (success) {
@@ -231,7 +243,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   /**
    * Record a typed character
    */
-  const typeChar = useCallback((char: string) => {
+  const typeChar: (char: string) => void = useCallback((char: string) => {
     gameEngineRef.current.typeChar(char);
     setGameState(gameEngineRef.current.getState());
   }, []);
@@ -239,16 +251,33 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   /**
    * Trigger a new challenge
    */
-  const triggerChallenge = useCallback(() => {
+  const triggerChallenge: () => boolean = useCallback(() => {
     return gameEngineRef.current.triggerChallenge();
   }, []);
 
-  const value: GameContextType = {
+  /** Purchase repeatable click power upgrade */
+  const purchaseClickPowerUpgrade: () => boolean = useCallback(() => {
+    if (!gameEngineRef.current) return false;
+    const success = gameEngineRef.current.purchaseClickPowerUpgrade();
+    if (success) {
+      setGameState(gameEngineRef.current.getState());
+    }
+    return success;
+  }, []);
+
+  /** Internal cheat click (double reward) */
+  const cheatClick = useCallback(() => {
+    if (gameEngineRef.current) {
+      gameEngineRef.current.cheatClick();
+      setGameState(gameEngineRef.current.getState());
+    }
+  }, []);
+
+  const value = {
     resources: gameState.resources,
     productionRate: gameState.productionRate,
     producers: gameState.producers,
     bestValueProducerId: gameState.bestValueProducerId,
-    autoBuyUnlocked: gameState.autoBuyUnlocked,
     autoBuyEnabled: gameState.autoBuyEnabled,
     autoBuySpeedLevel: gameState.autoBuySpeedLevel,
     autoBuySpeedUpgradeCost: gameState.autoBuySpeedUpgradeCost,
@@ -257,23 +286,57 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     timeUntilNextAutoBuy: gameState.timeUntilNextAutoBuy,
     click,
     purchaseProducer,
-    unlockAutoBuy,
     toggleAutoBuy,
     purchaseAutoBuySpeedUpgrade,
     resetGame,
-    // Typing additions
     wordsTyped: gameState.wordsTyped,
     streakWords: gameState.streakWords,
     currentStreakMultiplier: gameState.currentStreakMultiplier,
     typingUnlocked: gameState.typingUnlocked,
+    challengesUnlocked: gameState.challengesUnlocked,
     typeChar,
-    // Challenge additions
     challenge: gameState.challenge,
     nextChallengeInWords: gameState.nextChallengeInWords,
     completedChallenges: gameState.completedChallenges,
     failedChallenges: gameState.failedChallenges,
-    triggerChallenge
-  };
+    triggerChallenge,
+    upgrades: gameState.upgrades,
+    purchaseUpgrade,
+    clickPowerLevel: gameState.clickPowerLevel,
+    clickValue: gameState.clickValue,
+    clickPowerUpgradeCost: gameState.clickPowerUpgradeCost,
+    canAffordClickPowerUpgrade: gameState.canAffordClickPowerUpgrade,
+    purchaseClickPowerUpgrade,
+    cheatActive,
+  } as GameContextType;
+
+  useEffect(() => {
+    const pressed = new Set<string>();
+    let comboActive = false;
+    const down = (e: KeyboardEvent) => {
+      pressed.add(e.key.toLowerCase());
+      if (pressed.has('a') && pressed.has('t')) {
+        if (!comboActive) {
+          gameEngineRef.current.cheatClick();
+          comboActive = true;
+        }
+        setCheatActive(true);
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      pressed.delete(e.key.toLowerCase());
+      if (!pressed.has('a') || !pressed.has('t')) {
+        comboActive = false;
+        setCheatActive(false);
+      }
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, []);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };

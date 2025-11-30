@@ -1,4 +1,4 @@
-import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, WORD_BOUNDARIES } from '../constants/gameConstants';
+import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, WORD_BOUNDARIES, UPGRADES } from '../constants/gameConstants';
 import { pickRandomChallenge } from '../constants/challenges';
 
 /**
@@ -50,7 +50,6 @@ export class GameEngine {
   public resources: number;
   public productionRate: number;
   public producers: ProducerTier[];
-  public autoBuyUnlocked: boolean;
   public autoBuyEnabled: boolean;
   public autoBuySpeedLevel: number; // Number of speed upgrades purchased
   private lastUpdate: number;
@@ -68,13 +67,14 @@ export class GameEngine {
   private failedChallenges: number;
   private completedChallenges: number;
   private unlockedProducers: Set<string>; // Track permanently unlocked producer IDs
-  private typingUnlocked: boolean; // Track if typing mechanic is unlocked
+  // Track purchased upgrades
+  private purchasedUpgrades: Set<string>;
+  private clickPowerLevel: number; // repeatable click power upgrade level
 
   constructor() {
     this.resources = 0;
     this.productionRate = 0;
     this.lastUpdate = Date.now();
-    this.autoBuyUnlocked = false;
     this.autoBuyEnabled = false;
     this.autoBuySpeedLevel = 0;
     this.lastAutoBuy = Date.now();
@@ -91,9 +91,10 @@ export class GameEngine {
     this.lastChallengeWords = 0;
     this.failedChallenges = 0;
     this.completedChallenges = 0;
-    // Initialize with only codingSession unlocked (scriptRunner unlocks at 200 resources)
+    // Initialize with only codingSession unlocked (scriptRunner unlocks at 100 resources)
     this.unlockedProducers = new Set<string>(['codingSession']);
-    this.typingUnlocked = false;
+    this.purchasedUpgrades = new Set<string>();
+    this.clickPowerLevel = 0;
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -161,7 +162,18 @@ export class GameEngine {
    * Awards resources per click based on configured base click power
    */
   click(): void {
-    this.resources += BASE_CLICK_POWER;
+    this.resources += this.getClickValue();
+  }
+
+  /** Cheat click awarding 10x current click value (activated by simultaneous A+T) */
+  cheatClick(): void {
+    this.resources += this.getClickValue() * 10;
+  }
+
+  /** Current click value based on clickPowerLevel */
+  private getClickValue(): number {
+    // Doubling each level: base * 2^level
+    return BASE_CLICK_POWER * Math.pow(2, this.clickPowerLevel);
   }
 
   /** Handle a typed character (optional mechanic) */
@@ -237,8 +249,8 @@ export class GameEngine {
     }
     this.currentWordLength = 0;
 
-    // Auto-trigger challenge when threshold reached and none active
-    if (!this.activeChallenge && this.wordsTyped > 0) {
+    // Auto-trigger challenge when threshold reached, none active, and challenges are unlocked
+    if (this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id) && !this.activeChallenge && this.wordsTyped > 0) {
       const wordsSinceLast = this.wordsTyped - this.lastChallengeWords;
       if (wordsSinceLast >= TYPING_CONFIG.wordsPerChallenge) {
         this.startChallenge();
@@ -418,10 +430,6 @@ export class GameEngine {
       }
     }
 
-    // Check if typing should be unlocked
-    if (!this.typingUnlocked && this.resources >= 200) {
-      this.typingUnlocked = true;
-    }
 
     // Add resources based on production rate
     if (this.productionRate > 0) {
@@ -494,17 +502,19 @@ export class GameEngine {
       })),
       bestValueProducerId: this.bestValueProducerId,
       autoBuyEnabled: this.autoBuyEnabled,
-      autoBuyUnlocked: this.autoBuyUnlocked,
       autoBuySpeedLevel: this.autoBuySpeedLevel,
       autoBuySpeedUpgradeCost: this.getAutoBuySpeedUpgradeCost(),
       canAffordAutoBuySpeedUpgrade: this.canAffordAutoBuySpeedUpgrade(),
       autoBuyInterval: Math.ceil(this.getAutoBuyInterval() / 1000), // in seconds
       timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy(),
+      // Upgrades
+      upgrades: this.getUpgrades(),
       // Typing stats
       wordsTyped: this.wordsTyped,
       streakWords: this.streakWords,
       currentStreakMultiplier: this.getCurrentStreakMultiplier(),
-      typingUnlocked: this.typingUnlocked,
+      typingUnlocked: this.purchasedUpgrades.has(UPGRADES.TYPING.id),
+      challengesUnlocked: this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id),
       // Challenge info
       challenge: this.activeChallenge ? {
         id: this.activeChallenge.id,
@@ -517,7 +527,12 @@ export class GameEngine {
       } : null,
       nextChallengeInWords: this.activeChallenge ? 0 : Math.max(0, TYPING_CONFIG.wordsPerChallenge - (this.wordsTyped - this.lastChallengeWords)),
       completedChallenges: this.completedChallenges,
-      failedChallenges: this.failedChallenges
+      failedChallenges: this.failedChallenges,
+      // Click power upgrade info
+      clickPowerLevel: this.clickPowerLevel,
+      clickValue: this.getClickValue(),
+      clickPowerUpgradeCost: this.getClickPowerUpgradeCost(),
+      canAffordClickPowerUpgrade: this.canAffordClickPowerUpgrade()
     };
   }
 
@@ -543,10 +558,10 @@ export class GameEngine {
       producers: this.producers.map(u => ({ id: u.id, quantity: u.quantity, totalSpent: u.totalSpent })),
       lastUpdate: this.lastUpdate,
       autoBuyEnabled: this.autoBuyEnabled,
-      autoBuyUnlocked: this.autoBuyUnlocked,
       autoBuySpeedLevel: this.autoBuySpeedLevel,
       unlockedProducers: Array.from(this.unlockedProducers),
-      typingUnlocked: this.typingUnlocked,
+      purchasedUpgrades: Array.from(this.purchasedUpgrades),
+      clickPowerLevel: this.clickPowerLevel,
     };
   }
 
@@ -558,10 +573,12 @@ export class GameEngine {
     producers?: Array<{ id: string; quantity: number; totalSpent?: number }>;
     lastUpdate?: number;
     autoBuyEnabled?: boolean;
-    autoBuyUnlocked?: boolean;
+    autoBuyUnlocked?: boolean; // Legacy - migrate to purchasedUpgrades
     autoBuySpeedLevel?: number;
     unlockedProducers?: string[];
-    typingUnlocked?: boolean;
+    typingUnlocked?: boolean; // Legacy - migrate to purchasedUpgrades
+    purchasedUpgrades?: string[];
+    clickPowerLevel?: number;
   }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
@@ -582,33 +599,64 @@ export class GameEngine {
     if (saveData.autoBuyEnabled !== undefined) {
       this.autoBuyEnabled = saveData.autoBuyEnabled;
     }
-    if (saveData.autoBuyUnlocked !== undefined) {
-      this.autoBuyUnlocked = saveData.autoBuyUnlocked;
-    }
     if (saveData.autoBuySpeedLevel !== undefined) {
       this.autoBuySpeedLevel = saveData.autoBuySpeedLevel;
     }
     if (saveData.unlockedProducers) {
       this.unlockedProducers = new Set(saveData.unlockedProducers);
     }
-    if (saveData.typingUnlocked !== undefined) {
-      this.typingUnlocked = saveData.typingUnlocked;
+    if (saveData.purchasedUpgrades) {
+      this.purchasedUpgrades = new Set(saveData.purchasedUpgrades);
+    }
+    if (saveData.clickPowerLevel !== undefined) {
+      this.clickPowerLevel = saveData.clickPowerLevel;
+    }
+    // Migrate old save format
+    if (saveData.autoBuyUnlocked) {
+      this.purchasedUpgrades.add(UPGRADES.AUTO_BUY.id);
+    }
+    if (saveData.typingUnlocked) {
+      this.purchasedUpgrades.add(UPGRADES.TYPING.id);
     }
   }
 
   /**
-   * Unlock the auto-buy feature
-   * @returns true if unlock succeeded
+   * Purchase an upgrade by ID
+   * @param upgradeId - The ID of the upgrade to purchase
+   * @returns true if purchase succeeded
    */
-  unlockAutoBuy(): boolean {
-    const cost = 10000;
-    if (this.resources < cost || this.autoBuyUnlocked) {
+  purchaseUpgrade(upgradeId: string): boolean {
+    // Check if already purchased
+    if (this.purchasedUpgrades.has(upgradeId)) {
       return false;
     }
 
-    this.resources -= cost;
-    this.autoBuyUnlocked = true;
+    // Find upgrade definition
+    const upgradeEntry = Object.values(UPGRADES).find(u => u.id === upgradeId);
+    if (!upgradeEntry) {
+      return false;
+    }
+
+    // Check if can afford
+    if (this.resources < upgradeEntry.cost) {
+      return false;
+    }
+
+    // Purchase
+    this.resources -= upgradeEntry.cost;
+    this.purchasedUpgrades.add(upgradeId);
     return true;
+  }
+
+  /**
+   * Get all available upgrades with purchase status
+   */
+  getUpgrades() {
+    return Object.values(UPGRADES).map(upgrade => ({
+      ...upgrade,
+      purchased: this.purchasedUpgrades.has(upgrade.id),
+      canAfford: this.resources >= upgrade.cost && !this.purchasedUpgrades.has(upgrade.id)
+    }));
   }
 
   /**
@@ -625,7 +673,7 @@ export class GameEngine {
    * Check if player can afford the next auto-buy speed upgrade
    */
   canAffordAutoBuySpeedUpgrade(): boolean {
-    if (!this.autoBuyUnlocked) return false;
+    if (!this.purchasedUpgrades.has(UPGRADES.AUTO_BUY.id)) return false;
     const cost = this.getAutoBuySpeedUpgradeCost();
     return this.resources >= cost;
   }
@@ -636,7 +684,7 @@ export class GameEngine {
    * @returns true if purchase succeeded
    */
   purchaseAutoBuySpeedUpgrade(): boolean {
-    if (!this.autoBuyUnlocked) return false;
+    if (!this.purchasedUpgrades.has(UPGRADES.AUTO_BUY.id)) return false;
 
     const cost = this.getAutoBuySpeedUpgradeCost();
     if (this.resources < cost) return false;
@@ -661,11 +709,30 @@ export class GameEngine {
     return Math.max(minInterval, baseInterval - reduction);
   }
 
+  /** Repeatable click power upgrade cost (base 10000, *2 each level) */
+  getClickPowerUpgradeCost(): number {
+    const baseCost = 10000;
+    const multiplier = 2; // doubles each purchase
+    return Math.floor(baseCost * Math.pow(multiplier, this.clickPowerLevel));
+  }
+
+  canAffordClickPowerUpgrade(): boolean {
+    return this.resources >= this.getClickPowerUpgradeCost();
+  }
+
+  purchaseClickPowerUpgrade(): boolean {
+    const cost = this.getClickPowerUpgradeCost();
+    if (this.resources < cost) return false;
+    this.resources -= cost;
+    this.clickPowerLevel++;
+    return true;
+  }
+
   /**
    * Toggle auto-buy on/off
    */
   toggleAutoBuy(): void {
-    if (!this.autoBuyUnlocked) return;
+    if (!this.purchasedUpgrades.has(UPGRADES.AUTO_BUY.id)) return;
     this.autoBuyEnabled = !this.autoBuyEnabled;
     if (this.autoBuyEnabled) {
       this.lastAutoBuy = Date.now();
@@ -678,7 +745,6 @@ export class GameEngine {
   reset(): void {
     this.resources = 0;
     this.productionRate = 0;
-    this.autoBuyUnlocked = false;
     this.autoBuyEnabled = false;
     this.autoBuySpeedLevel = 0;
     this.lastAutoBuy = Date.now();
@@ -701,7 +767,8 @@ export class GameEngine {
     this.failedChallenges = 0;
     this.completedChallenges = 0;
     this.unlockedProducers = new Set<string>(['codingSession']);
-    this.typingUnlocked = false;
+    this.purchasedUpgrades = new Set<string>();
+    this.clickPowerLevel = 0;
 
     this.lastUpdate = Date.now();
   }

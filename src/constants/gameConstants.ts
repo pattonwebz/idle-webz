@@ -85,3 +85,28 @@ export const PRODUCER_TIERS = {
     unlockThreshold: 12500, // 5x CI pipeline unlock (2500 * 5)
   },
 } as const;
+
+/**
+ * One-time purchasable upgrades
+ */
+export const UPGRADES = {
+  TYPING: {
+    id: 'typing',
+    name: 'Typing Mechanic',
+    description: 'Unlock the ability to type code instead of clicking. Earn bonuses for words and streaks!',
+    cost: 5000,
+  },
+  AUTO_BUY: {
+    id: 'autoBuy',
+    name: 'Auto-Buy',
+    description: 'Automatically purchase producers when you can afford them',
+    cost: 3000,
+  },
+  CHALLENGES: {
+    id: 'challenges',
+    name: 'Code Challenges',
+    description: 'Unlock mini typing challenges that appear every 10 words for massive bonuses!',
+    cost: 20000,
+  },
+} as const;
+
