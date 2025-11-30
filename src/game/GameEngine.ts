@@ -1,5 +1,6 @@
 import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, WORD_BOUNDARIES, UPGRADES } from '../constants/gameConstants';
 import { pickRandomChallenge } from '../constants/challenges';
+import { AutoBuyer } from './autobuy/AutoBuyer';
 
 /**
  * Core game engine handling all game logic and state management.
@@ -71,6 +72,7 @@ export class GameEngine {
   private purchasedUpgrades: Set<string>;
   private clickPowerLevel: number; // repeatable click power upgrade level
   private challengesEnabled: boolean; // whether auto-challenges are enabled
+  private autoBuyer: AutoBuyer;
 
   constructor() {
     this.resources = 0;
@@ -97,6 +99,7 @@ export class GameEngine {
     this.purchasedUpgrades = new Set<string>();
     this.clickPowerLevel = 0;
     this.challengesEnabled = true;
+    this.autoBuyer = new AutoBuyer();
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -455,33 +458,21 @@ export class GameEngine {
    * Buys the best value (lowest cost per resource) producer based on upgrade interval
    */
   private handleAutoBuy(now: number): void {
-    const interval = this.getAutoBuyInterval();
-    const timeSinceLastBuy = now - this.lastAutoBuy;
-
-    if (timeSinceLastBuy < interval) return;
-
-    // Find all affordable producers (excluding manual)
-    const affordableProducers = this.producers.filter(
-      p => this.canAffordProducer(p.id) && p.id !== 'codingSession'
-    );
-
-    if (affordableProducers.length === 0) return;
-
-    // Find the best value producer (lowest cost per resource produced)
-    let bestProducer = affordableProducers[0];
-    let bestRatio = this.getProducerCost(bestProducer.id) / bestProducer.productionRate;
-
-    for (const producer of affordableProducers) {
-      const ratio = this.getProducerCost(producer.id) / producer.productionRate;
-      if (ratio < bestRatio) {
-        bestRatio = ratio;
-        bestProducer = producer;
-      }
+    // delegate to AutoBuyer and purchase best if possible
+    this.autoBuyer.setEnabled(this.autoBuyEnabled);
+    this.autoBuyer.setSpeedLevel(this.autoBuySpeedLevel);
+    const purchaseId = this.autoBuyer.tryPurchaseBest(now, this.resources, this.producers, (id) => this.getProducerCost(id));
+    if (!purchaseId) return;
+    // perform purchase
+    const cost = this.getProducerCost(purchaseId);
+    if (this.resources < cost) return;
+    this.resources -= cost;
+    const target = this.producers.find(p => p.id === purchaseId);
+    if (target) {
+      target.quantity++;
+      target.totalSpent += cost;
     }
-
-    // Purchase the best value producer
-    this.purchaseProducer(bestProducer.id);
-    this.lastAutoBuy = now;
+    this.updateProductionRate();
   }
 
   /**
@@ -508,7 +499,7 @@ export class GameEngine {
       autoBuySpeedUpgradeCost: this.getAutoBuySpeedUpgradeCost(),
       canAffordAutoBuySpeedUpgrade: this.canAffordAutoBuySpeedUpgrade(),
       autoBuyInterval: Math.ceil(this.getAutoBuyInterval() / 1000), // in seconds
-      timeUntilNextAutoBuy: this.getTimeUntilNextAutoBuy(),
+      timeUntilNextAutoBuy: this.autoBuyer.getSecondsUntilNext(Date.now()),
       // Upgrades
       upgrades: this.getUpgrades(),
       // Typing stats
