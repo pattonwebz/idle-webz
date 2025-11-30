@@ -17,6 +17,7 @@ export const Upgrades: React.FC = () => {
   };
 
   const autoBuyUnlocked = upgrades.find(u => u.id === 'autoBuy')?.purchased ?? false;
+  const typingUnlocked = upgrades.find(u => u.id === 'typing')?.purchased ?? false;
 
   return (
     <div className="upgrades-container">
@@ -65,7 +66,9 @@ export const Upgrades: React.FC = () => {
         )}
       </div>
       <div className="upgrades-grid">
-        {upgrades.map(upgrade => (
+        {upgrades
+          .filter(upg => !(upg.id === 'challenges' && !typingUnlocked))
+          .map(upgrade => (
           <div
             key={upgrade.id}
             className={`upgrade-card ${upgrade.purchased ? 'purchased' : ''} ${upgrade.canAfford && !upgrade.purchased ? 'affordable' : ''}`}
