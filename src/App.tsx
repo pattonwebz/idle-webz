@@ -26,7 +26,7 @@ function GameContent() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Incremental Clicker</h1>
+        <h1>Idle Webz</h1>
         <GameControls />
       </header>
       <main className="app-main">
