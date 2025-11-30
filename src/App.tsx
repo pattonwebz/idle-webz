@@ -2,6 +2,7 @@
  * Root application component for Incremental Clicker Game
  */
 
+import { useState } from 'react'
 import './App.scss'
 import { GameProvider } from './context/GameContext'
 import { ResourceDisplay } from './components/ResourceDisplay'
@@ -10,12 +11,17 @@ import { AutoBuy } from './components/AutoBuy'
 import { ProducerList } from './components/ProducerList'
 import { GameControls } from './components/GameControls'
 import { TypingPanel } from './components/TypingPanel'
+import { Upgrades } from './components/Upgrades'
+
+type TabType = 'producers' | 'upgrades';
 
 /**
  * Main application component
  * Wraps the entire app in GameProvider for state management
  */
 function App() {
+  const [activeTab, setActiveTab] = useState<TabType>('producers');
+
   return (
     <GameProvider>
       <div className="app">
@@ -30,7 +36,28 @@ function App() {
             <AutoBuy />
           </div>
           <TypingPanel />
-          <ProducerList />
+
+          {/* Tab Navigation */}
+          <div className="tab-navigation">
+            <button
+              className={`tab-button ${activeTab === 'producers' ? 'active' : ''}`}
+              onClick={() => setActiveTab('producers')}
+            >
+              Producers
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'upgrades' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upgrades')}
+            >
+              Upgrades
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="tab-content">
+            {activeTab === 'producers' && <ProducerList />}
+            {activeTab === 'upgrades' && <Upgrades />}
+          </div>
         </main>
       </div>
     </GameProvider>
