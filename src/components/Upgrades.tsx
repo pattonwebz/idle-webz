@@ -10,16 +10,19 @@ import './Upgrades.scss';
  * Displays all available one-time upgrades that unlock game features
  */
 export const Upgrades: React.FC = () => {
-  const { upgrades, purchaseUpgrade, clickPowerLevel, clickValue, clickPowerUpgradeCost, canAffordClickPowerUpgrade, purchaseClickPowerUpgrade } = useGame();
+  const { upgrades, purchaseUpgrade, clickPowerLevel, clickValue, clickPowerUpgradeCost, canAffordClickPowerUpgrade, purchaseClickPowerUpgrade, autoBuySpeedLevel, autoBuySpeedUpgradeCost, canAffordAutoBuySpeedUpgrade, purchaseAutoBuySpeedUpgrade } = useGame();
 
   const handlePurchase = (upgradeId: string) => {
     purchaseUpgrade(upgradeId);
   };
 
+  const autoBuyUnlocked = upgrades.find(u => u.id === 'autoBuy')?.purchased ?? false;
+
   return (
     <div className="upgrades-container">
       <h2 className="upgrades-title">Upgrades</h2>
       <div className="repeatable-upgrades">
+        {/* Click Power repeatable upgrade */}
         <div className={`upgrade-card repeatable ${canAffordClickPowerUpgrade ? 'affordable' : ''}`}>
           <div className="upgrade-header">
             <h3 className="upgrade-name">Click Power</h3>
@@ -38,6 +41,28 @@ export const Upgrades: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Auto-Buy Speed repeatable upgrade (visible after Auto-Buy unlock) */}
+        {autoBuyUnlocked && (
+          <div className={`upgrade-card repeatable ${canAffordAutoBuySpeedUpgrade ? 'affordable' : ''}`}>
+            <div className="upgrade-header">
+              <h3 className="upgrade-name">Auto-Buy Speed</h3>
+              <span className="upgrade-level">Level {autoBuySpeedLevel}</span>
+            </div>
+            <p className="upgrade-description">Reduce auto-buy interval by 2s per level (min 2s). Current interval depends on level.</p>
+            <div className="upgrade-footer">
+              <button
+                className={`upgrade-button ${canAffordAutoBuySpeedUpgrade ? 'affordable' : 'unaffordable'}`}
+                onClick={() => purchaseAutoBuySpeedUpgrade()}
+                disabled={!canAffordAutoBuySpeedUpgrade}
+                aria-label="Purchase Auto-Buy Speed upgrade"
+              >
+                <span className="button-text">Upgrade</span>
+                <span className="button-cost">Cost: {formatNumberAdaptive(autoBuySpeedUpgradeCost, 0, 1)}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <div className="upgrades-grid">
         {upgrades.map(upgrade => (

@@ -62,27 +62,10 @@ export const AutoBuy: React.FC = () => {
         </span>
       </button>
 
-      {!maxLevel && (
-        <button
-          className={`auto-buy-speed-button ${canAffordAutoBuySpeedUpgrade ? 'affordable' : 'unaffordable'}`}
-          onClick={handleSpeedUpgrade}
-          disabled={!canAffordAutoBuySpeedUpgrade}
-          aria-label={`Upgrade Auto-Buy Speed (Level ${autoBuySpeedLevel})`}
-        >
-          <span className="button-text">⚡ Speed Upgrade</span>
-          <span className="button-subtext">
-            Level {autoBuySpeedLevel} → {autoBuySpeedLevel + 1} (-2s) | Cost: {formatNumberAdaptive(autoBuySpeedUpgradeCost, 0, 1)}
-          </span>
-        </button>
-      )}
-
-      {maxLevel && (
-        <div className="max-level-indicator">
-          <span className="button-text">⚡ MAX SPEED</span>
-          <span className="button-subtext">Level {autoBuySpeedLevel} (2s minimum)</span>
-        </div>
-      )}
+      {/* Speed upgrades moved to Upgrades tab */}
+      <div className="auto-buy-info">
+        <span className="info-text">Speed Level: {autoBuySpeedLevel}{maxLevel ? ' (MAX)' : ''} • Interval: {autoBuyInterval}s</span>
+      </div>
     </div>
   );
 };
-
