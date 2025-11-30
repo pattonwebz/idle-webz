@@ -4,7 +4,7 @@ import { useGame } from '../hooks/useGame';
 import './TypingPanel.scss';
 
 export const TypingPanel: FC = () => {
-  const { typeChar, currentStreakMultiplier, streakWords, wordsTyped, challenge, nextChallengeInWords, triggerChallenge, typingUnlocked, challengesUnlocked } = useGame();
+  const { typeChar, currentStreakMultiplier, streakWords, wordsTyped, challenge, nextChallengeInWords, triggerChallenge, typingUnlocked, challengesUnlocked, challengesEnabled, toggleChallenges } = useGame();
   const [inputValue, setInputValue] = useState('');
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -30,12 +30,7 @@ export const TypingPanel: FC = () => {
   }, []);
 
   if (!typingUnlocked) {
-    return (
-      <div className="typing-panel locked">
-        <h2>Coding Session (Typing) 🔒</h2>
-        <p className="unlock-hint">Visit the Upgrades tab to unlock typing for 5,000 resources!</p>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -90,6 +85,17 @@ export const TypingPanel: FC = () => {
         <span>Current Streak: {streakWords}</span>
         <span>Streak Multiplier: x{currentStreakMultiplier.toFixed(2)}</span>
       </div>
+      {/* Challenges toggle */}
+      {challengesUnlocked && (
+        <div className="challenge-toggle">
+          <button className={`toggle-btn ${challengesEnabled ? 'on' : 'off'}`} onClick={toggleChallenges} aria-label="Toggle typing challenges">
+            {challengesEnabled ? 'Challenges: ON (auto)' : 'Challenges: OFF'}
+          </button>
+          {!challengesEnabled && (
+            <span className="toggle-hint">You can still trigger a challenge manually when ready.</span>
+          )}
+        </div>
+      )}
       <p className="typing-hint">
         No reward for the 3rd identical char. Complete words for bonus & streak.
         {challengesUnlocked && " Complete mini challenges fast for big rewards."}

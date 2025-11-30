@@ -70,6 +70,7 @@ export class GameEngine {
   // Track purchased upgrades
   private purchasedUpgrades: Set<string>;
   private clickPowerLevel: number; // repeatable click power upgrade level
+  private challengesEnabled: boolean; // whether auto-challenges are enabled
 
   constructor() {
     this.resources = 0;
@@ -95,6 +96,7 @@ export class GameEngine {
     this.unlockedProducers = new Set<string>(['codingSession']);
     this.purchasedUpgrades = new Set<string>();
     this.clickPowerLevel = 0;
+    this.challengesEnabled = true;
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -249,8 +251,8 @@ export class GameEngine {
     }
     this.currentWordLength = 0;
 
-    // Auto-trigger challenge when threshold reached, none active, and challenges are unlocked
-    if (this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id) && !this.activeChallenge && this.wordsTyped > 0) {
+    // Auto-trigger challenge when threshold reached, none active, challenges are unlocked AND enabled
+    if (this.challengesEnabled && this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id) && !this.activeChallenge && this.wordsTyped > 0) {
       const wordsSinceLast = this.wordsTyped - this.lastChallengeWords;
       if (wordsSinceLast >= TYPING_CONFIG.wordsPerChallenge) {
         this.startChallenge();
@@ -528,6 +530,7 @@ export class GameEngine {
       nextChallengeInWords: this.activeChallenge ? 0 : Math.max(0, TYPING_CONFIG.wordsPerChallenge - (this.wordsTyped - this.lastChallengeWords)),
       completedChallenges: this.completedChallenges,
       failedChallenges: this.failedChallenges,
+      challengesEnabled: this.challengesEnabled,
       // Click power upgrade info
       clickPowerLevel: this.clickPowerLevel,
       clickValue: this.getClickValue(),
@@ -562,6 +565,7 @@ export class GameEngine {
       unlockedProducers: Array.from(this.unlockedProducers),
       purchasedUpgrades: Array.from(this.purchasedUpgrades),
       clickPowerLevel: this.clickPowerLevel,
+      challengesEnabled: this.challengesEnabled,
     };
   }
 
@@ -579,6 +583,7 @@ export class GameEngine {
     typingUnlocked?: boolean; // Legacy - migrate to purchasedUpgrades
     purchasedUpgrades?: string[];
     clickPowerLevel?: number;
+    challengesEnabled?: boolean;
   }): void {
     if (saveData.resources !== undefined) {
       this.resources = saveData.resources;
@@ -610,6 +615,9 @@ export class GameEngine {
     }
     if (saveData.clickPowerLevel !== undefined) {
       this.clickPowerLevel = saveData.clickPowerLevel;
+    }
+    if (saveData.challengesEnabled !== undefined) {
+      this.challengesEnabled = saveData.challengesEnabled;
     }
     // Migrate old save format
     if (saveData.autoBuyUnlocked) {
@@ -737,6 +745,14 @@ export class GameEngine {
     if (this.autoBuyEnabled) {
       this.lastAutoBuy = Date.now();
     }
+  }
+
+  /**
+   * Toggle challenges on/off
+   */
+  toggleChallenges(): void {
+    if (!this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id)) return;
+    this.challengesEnabled = !this.challengesEnabled;
   }
 
   /**

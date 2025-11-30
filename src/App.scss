@@ -78,6 +78,14 @@
   @include bp.tablet {
     gap: 2rem;
   }
+
+  &.single-column {
+    justify-content: center;
+
+    .click-section {
+      max-width: 600px;
+    }
+  }
 }
 
 .click-section {

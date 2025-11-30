@@ -66,6 +66,10 @@ export interface GameContextType {
   typingUnlocked: boolean;
   /** Whether challenges feature is unlocked */
   challengesUnlocked: boolean;
+  /** Whether challenges are currently enabled (auto-trigger) */
+  challengesEnabled: boolean;
+  /** Toggle challenges on/off */
+  toggleChallenges: () => void;
   /** Current active challenge information */
   challenge: null | { id: string; snippet: string; description: string; progress: number; total: number; timeRemaining: number; startedOnNewLine: boolean };
   /** Number of words until the next challenge */
@@ -255,6 +259,15 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     return gameEngineRef.current.triggerChallenge();
   }, []);
 
+  /**
+   * Toggle challenges on/off
+   */
+  const toggleChallenges: () => void = useCallback(() => {
+    if (!gameEngineRef.current) return;
+    gameEngineRef.current.toggleChallenges();
+    setGameState(gameEngineRef.current.getState());
+  }, []);
+
   /** Purchase repeatable click power upgrade */
   const purchaseClickPowerUpgrade: () => boolean = useCallback(() => {
     if (!gameEngineRef.current) return false;
@@ -263,14 +276,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setGameState(gameEngineRef.current.getState());
     }
     return success;
-  }, []);
-
-  /** Internal cheat click (double reward) */
-  const cheatClick = useCallback(() => {
-    if (gameEngineRef.current) {
-      gameEngineRef.current.cheatClick();
-      setGameState(gameEngineRef.current.getState());
-    }
   }, []);
 
   const value = {
@@ -294,6 +299,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     currentStreakMultiplier: gameState.currentStreakMultiplier,
     typingUnlocked: gameState.typingUnlocked,
     challengesUnlocked: gameState.challengesUnlocked,
+    challengesEnabled: gameState.challengesEnabled,
+    toggleChallenges,
     typeChar,
     challenge: gameState.challenge,
     nextChallengeInWords: gameState.nextChallengeInWords,

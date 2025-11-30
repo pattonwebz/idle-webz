@@ -37,7 +37,7 @@ export const TYPING_CONFIG = {
   /** Characters considered word boundaries triggering word completion */
   wordBoundaries: Array.from(WORD_BOUNDARIES),
   /** Number of words between automatic mini challenges */
-  wordsPerChallenge: 10,
+  wordsPerChallenge: 30,
   /** Base challenge reward multiplier (challengeReward = snippetLength * baseCharValue * challengeRewardMultiplier) */
   challengeRewardMultiplier: 5,
 } as const;
