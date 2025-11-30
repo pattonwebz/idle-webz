@@ -37,25 +37,25 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 
   &.affordable {
-    border-color: #4ade80;
-    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    border-color: #22c55e; // green 600
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
     animation: pulse-border 2s ease-in-out infinite;
   }
 
   &.purchased {
-    border-color: #fbbf24;
-    background: rgba(251, 191, 36, 0.1);
-    opacity: 0.8;
+    border-color: #a16207; // amber 700 for better contrast
+    background: #312508; // dark amber background for contrast
+    opacity: 1; // ensure full opacity
   }
 
   &:hover:not(.purchased) {
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
-    border-color: #4a7cff;
+    border-color: #2563eb; // blue 600
   }
 
   &.repeatable {
-    border-color: #4250a3;
+    border-color: #374151; // gray 700
   }
 }
 
@@ -69,27 +69,27 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #00d9ff;
+  color: #e2e8f0; // slate 200 for high contrast on dark bg
 }
 
 .badge {
-  background: rgba(102, 126, 234, 0.15);
-  border: 1px solid rgba(102, 126, 234, 0.4);
-  color: #aab7ff;
+  background: #1f2937; // gray 800
+  border: 1px solid #6b7280; // gray 500
+  color: #f8fafc; // near white
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   font-size: 0.75rem;
 }
 
 .purchased-badge {
-  background: rgba(60, 180, 60, 0.2);
-  border-color: rgba(60, 180, 60, 0.5);
-  color: #8ef58e;
+  background: #064e3b; // emerald 800
+  border-color: #10b981; // emerald 500
+  color: #e2f7ef; // light mint for contrast
 }
 
 .upgrade-description {
   margin: 0.5rem 0 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #e5e7eb; // gray 200
   font-size: 0.9rem;
   line-height: 1.5;
   opacity: 0.9;
@@ -105,57 +105,64 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid #555;
-  background: #40404a;
-  color: #fff;
+  border: 1px solid #6b7280; // gray 500
+  background: #1f2937; // gray 800
+  color: #f9fafb; // gray 50
   padding: 0.4rem 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 
   &.affordable {
-    border-color: #4a7cff;
-    background: #3b3b47;
+    border-color: #22c55e; // green 600
+    background: #0a1410; // very dark greenish
   }
 
   &.unaffordable {
-    opacity: 0.7;
+    opacity: 1;
+    color: #9ca3af; // gray 400
+    background: #111827; // gray 900
+    border-color: #4b5563; // gray 600
     cursor: not-allowed;
   }
 
   .button-text {
-    font-size: 1rem;
-    font-weight: 700;
+    color: #f9fafb;
   }
 
   .button-cost {
-    font-size: 0.9rem;
-    opacity: 0.9;
+    color: #f9fafb;
   }
+}
+
+.pill {
+  background: #0f172a; // slate 900
+  border: 1px solid #94a3b8; // slate 400
+  color: #f1f5f9; // slate 100
 }
 
 .purchased-status {
   text-align: center;
   padding: 0.75rem;
-  background: rgba(251, 191, 36, 0.2);
-  border: 2px solid #fbbf24;
+  background: #064e3b; // emerald 800
+  border: 2px solid #10b981; // emerald 500
   border-radius: 8px;
 
   .status-text {
-    color: #fbbf24;
-    font-weight: 600;
+    color: #e2f7ef; // light mint
+    font-weight: 700;
     font-size: 1rem;
   }
 }
 
 @keyframes pulse-border {
   0%, 100% {
-    border-color: #4ade80;
-    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    border-color: #22c55e;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
   }
   50% {
-    border-color: #22c55e;
-    box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
+    border-color: #16a34a; // green 600 darker
+    box-shadow: 0 0 22px rgba(34, 197, 94, 0.5);
   }
 }
 
