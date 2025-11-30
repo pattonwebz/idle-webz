@@ -1,6 +1,8 @@
 import type { FC } from 'react';
 import { useCallback, useState } from 'react';
 import { useGame } from '../hooks/useGame';
+import { ChallengeBox } from './TypingPanel/ChallengeBox';
+import { ToggleChallenges } from './TypingPanel/ToggleChallenges';
 import './TypingPanel.scss';
 
 export const TypingPanel: FC = () => {
@@ -37,25 +39,7 @@ export const TypingPanel: FC = () => {
     <div className="typing-panel">
       <h2>Coding Session (Typing)</h2>
       {challengesUnlocked && challenge && (
-        <div className="challenge-box" aria-live="polite">
-          <div className="challenge-header">
-            <strong>Challenge:</strong> {challenge.description} ({challenge.id})
-          </div>
-          {!challenge.startedOnNewLine && (
-            <div className="challenge-start-hint">Press Enter on an empty line to begin typing this challenge.</div>
-          )}
-          <div className="challenge-snippet">
-            <code>
-              <span className="typed">{challenge.snippet.slice(0, challenge.progress)}</span>
-              <span className="remaining">{challenge.snippet.slice(challenge.progress)}</span>
-            </code>
-          </div>
-          <div className="challenge-meta">
-            <span>Time Left: {challenge.timeRemaining}s</span>
-            <span>Progress: {challenge.progress}/{challenge.total}</span>
-            <span>{challenge.startedOnNewLine ? '⏱ Active' : '⏸ Waiting for newline'}</span>
-          </div>
-        </div>
+        <ChallengeBox challenge={challenge} />
       )}
       {challengesUnlocked && !challenge && (
         <div className="challenge-ready" aria-live="polite">
@@ -87,14 +71,7 @@ export const TypingPanel: FC = () => {
       </div>
       {/* Challenges toggle */}
       {challengesUnlocked && (
-        <div className="challenge-toggle">
-          <button className={`toggle-btn ${challengesEnabled ? 'on' : 'off'}`} onClick={toggleChallenges} aria-label="Toggle typing challenges">
-            {challengesEnabled ? 'Challenges: ON (auto)' : 'Challenges: OFF'}
-          </button>
-          {!challengesEnabled && (
-            <span className="toggle-hint">You can still trigger a challenge manually when ready.</span>
-          )}
-        </div>
+        <ToggleChallenges enabled={challengesEnabled} onToggle={toggleChallenges} />
       )}
       <p className="typing-hint">
         No reward for the 3rd identical char. Complete words for bonus & streak.
