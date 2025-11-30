@@ -167,9 +167,9 @@ export class GameEngine {
     this.resources += this.getClickValue();
   }
 
-  /** Cheat click awarding 10x current click value (activated by simultaneous A+T) */
+  /** Cheat click awarding flat 100 resources per activation (A+T combo) */
   cheatClick(): void {
-    this.resources += this.getClickValue() * 10;
+    this.resources += 100;
   }
 
   /** Current click value based on clickPowerLevel */
