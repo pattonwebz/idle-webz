@@ -1,4 +1,4 @@
-import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, WORD_BOUNDARIES, UPGRADES } from '../constants/gameConstants';
+import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, UPGRADES } from '../constants/gameConstants';
 import { pickRandomChallenge } from '../constants/challenges';
 import { AutoBuyer } from './autobuy/AutoBuyer';
 import { TypingEngine } from './typing/TypingEngine';

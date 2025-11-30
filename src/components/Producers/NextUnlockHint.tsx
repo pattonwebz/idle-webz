@@ -1,10 +1,9 @@
 import type { FC } from 'react';
 import '../ProducerList.scss';
 import { formatNumberAdaptive } from '../../utils/gameUtils';
-import type { ProducerTier } from '../../game/GameEngine';
 
 interface NextUnlockHintProps {
-  lockedProducers: Array<ProducerTier & { unlockThreshold?: number }>;
+  lockedProducers: Array<{ name: string; unlockThreshold?: number }>;
 }
 
 export const NextUnlockHint: FC<NextUnlockHintProps> = ({ lockedProducers }) => {
