@@ -4,7 +4,6 @@
 
 import { useGame } from '../hooks/useGame';
 import './AutoBuy.scss';
-import { formatNumberAdaptive } from '../utils/gameUtils';
 
 /**
  * Displays auto-buy toggle button and speed upgrades
@@ -15,11 +14,8 @@ export const AutoBuy: React.FC = () => {
     autoBuyEnabled,
     timeUntilNextAutoBuy,
     autoBuySpeedLevel,
-    autoBuySpeedUpgradeCost,
-    canAffordAutoBuySpeedUpgrade,
     autoBuyInterval,
     toggleAutoBuy,
-    purchaseAutoBuySpeedUpgrade,
     upgrades
   } = useGame();
 
@@ -28,10 +24,6 @@ export const AutoBuy: React.FC = () => {
 
   const handleToggle = () => {
     toggleAutoBuy();
-  };
-
-  const handleSpeedUpgrade = () => {
-    purchaseAutoBuySpeedUpgrade();
   };
 
   const formatTime = (seconds: number): string => {
