@@ -152,9 +152,11 @@
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 1;
     cursor: not-allowed;
-    background: #cbd5e0;
+    background: #1f2937; // dark gray for contrast
+    color: #ffffff; // white text for high contrast
+    border: 1px solid #4b5563; // subtle border for definition
   }
 }
 
