@@ -7,27 +7,24 @@ import './AutoBuy.scss';
 import { formatNumberAdaptive } from '../utils/gameUtils';
 
 /**
- * Displays auto-buy unlock/toggle button and speed upgrades
+ * Displays auto-buy toggle button and speed upgrades
  * Auto-buy purchases the best value affordable producer at regular intervals
  */
 export const AutoBuy: React.FC = () => {
   const {
-    autoBuyUnlocked,
     autoBuyEnabled,
-    resources,
     timeUntilNextAutoBuy,
     autoBuySpeedLevel,
     autoBuySpeedUpgradeCost,
     canAffordAutoBuySpeedUpgrade,
     autoBuyInterval,
-    unlockAutoBuy,
     toggleAutoBuy,
-    purchaseAutoBuySpeedUpgrade
+    purchaseAutoBuySpeedUpgrade,
+    upgrades
   } = useGame();
 
-  const handleUnlock = () => {
-    unlockAutoBuy();
-  };
+  const autoBuyUpgrade = upgrades.find(u => u.id === 'autoBuy');
+  const autoBuyUnlocked = autoBuyUpgrade?.purchased ?? false;
 
   const handleToggle = () => {
     toggleAutoBuy();
@@ -43,20 +40,7 @@ export const AutoBuy: React.FC = () => {
   };
 
   if (!autoBuyUnlocked) {
-    const canAfford = resources >= 10000;
-    return (
-      <div className="auto-buy-container">
-        <button
-          className={`auto-buy-unlock-button ${canAfford ? 'affordable' : 'unaffordable'}`}
-          onClick={handleUnlock}
-          disabled={!canAfford}
-          aria-label="Unlock Auto-Buy for 10,000 resources"
-        >
-          <span className="button-text">🤖 Unlock Auto-Buy</span>
-          <span className="button-subtext">Cost: 10,000</span>
-        </button>
-      </div>
-    );
+    return null; // Auto-buy is now unlocked via Upgrades tab
   }
 
   const maxLevel = autoBuySpeedLevel >= 14;

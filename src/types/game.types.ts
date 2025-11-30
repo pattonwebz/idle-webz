@@ -85,3 +85,19 @@ export const NumberFormat = {
 
 export type NumberFormatType = typeof NumberFormat[keyof typeof NumberFormat];
 
+/**
+ * One-time purchasable upgrade
+ */
+export interface OneTimeUpgrade {
+  /** Unique identifier for the upgrade */
+  id: string;
+  /** Display name shown to the player */
+  name: string;
+  /** Description of what the upgrade does */
+  description: string;
+  /** Cost to purchase this upgrade */
+  cost: number;
+  /** Whether this upgrade has been purchased */
+  purchased: boolean;
+}
+
