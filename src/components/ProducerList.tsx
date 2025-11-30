@@ -68,7 +68,11 @@ export const ProducerList: React.FC = () => {
             </div>
           ))}
           {lockedProducers.length > 0 && (
-          <div className="locked-hint" aria-live="polite">Next unlock at {formatNumber(lockedProducers[0].unlockThreshold || 0)} resources: {lockedProducers[0].name}</div>
+          <div className="locked-hint" aria-live="polite">
+            <span className="unlock-icon">🔒 Next Unlock</span>
+            <span className="unlock-name">{lockedProducers[0].name}</span>
+            <span className="unlock-cost">{formatNumber(lockedProducers[0].unlockThreshold || 0)}</span>
+          </div>
         )}
       </div>
     </div>

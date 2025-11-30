@@ -170,10 +170,34 @@
 
 .locked-hint {
   margin-top: 1rem;
-  font-size: 0.75rem;
-  opacity: 0.7;
-  background: #2a2a33;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border: 1px dashed #444;
+  font-size: 0.9rem;
+  background: #0f172a; // slate 900 for strong contrast
+  color: #e2e8f0; // light slate text for AA
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #334155; // slate 700
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+  .unlock-icon {
+    color: #fbbf24; // amber 400
+    font-weight: 800;
+  }
+
+  .unlock-name {
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .unlock-cost {
+    margin-left: auto;
+    background: #1e293b; // slate 800 pill
+    border: 1px solid #64748b; // slate 500
+    color: #f1f5f9; // slate 100
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+  }
 }
