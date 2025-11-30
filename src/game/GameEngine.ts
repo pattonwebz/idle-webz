@@ -1,7 +1,7 @@
-import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, TYPING_CONFIG, UPGRADES } from '../constants/gameConstants';
-import { pickRandomChallenge } from '../constants/challenges';
+import { BASE_CLICK_POWER, DEFAULT_COST_MULTIPLIER, PRODUCER_TIERS, UPGRADES } from '../constants/gameConstants';
 import { AutoBuyer } from './autobuy/AutoBuyer';
 import { TypingEngine } from './typing/TypingEngine';
+import { ProducerManager } from './producers/ProducerManager';
 
 /**
  * Core game engine handling all game logic and state management.
@@ -59,22 +59,9 @@ export class GameEngine {
   private bestValueProducerId: string | undefined;
   private lastBestValueCalc: number;
   // Typing mechanic state
-  private lastTypedChar: string | null;
-  private consecutiveSameCharCount: number;
-  private streakWords: number; // number of consecutive successful words
-  private wordsTyped: number;
-  private currentWordLength: number;
-  private activeChallenge: ActiveChallenge | null;
-  private lastChallengeWords: number;
-  private failedChallenges: number;
-  private completedChallenges: number;
-  private unlockedProducers: Set<string>; // Track permanently unlocked producer IDs
-  // Track purchased upgrades
-  private purchasedUpgrades: Set<string>;
-  private clickPowerLevel: number; // repeatable click power upgrade level
-  private challengesEnabled: boolean; // whether auto-challenges are enabled
-  private autoBuyer: AutoBuyer;
   private typing: TypingEngine;
+  private autoBuyer: AutoBuyer;
+  private producerManager: ProducerManager;
 
   constructor() {
     this.resources = 0;
@@ -87,22 +74,10 @@ export class GameEngine {
     this.bestValueProducerId = undefined;
     this.lastBestValueCalc = 0;
     // Typing state init
-    this.lastTypedChar = null;
-    this.consecutiveSameCharCount = 0;
-    this.streakWords = 0;
-    this.wordsTyped = 0;
-    this.currentWordLength = 0;
-    this.activeChallenge = null;
-    this.lastChallengeWords = 0;
-    this.failedChallenges = 0;
-    this.completedChallenges = 0;
-    // Initialize with only codingSession unlocked (scriptRunner unlocks at 100 resources)
-    this.unlockedProducers = new Set<string>(['codingSession']);
-    this.purchasedUpgrades = new Set<string>();
-    this.clickPowerLevel = 0;
-    this.challengesEnabled = true;
-    this.autoBuyer = new AutoBuyer();
     this.typing = new TypingEngine();
+    // AutoBuyer init
+    this.autoBuyer = new AutoBuyer();
+    this.producerManager = new ProducerManager();
   }
 
   /** Initialize all producer tiers with dev-themed values */
@@ -189,43 +164,6 @@ export class GameEngine {
     this.typing.handleChar(char, (val) => { this.resources += val; });
   }
 
-  // Mini challenge lifecycle
-  private startChallenge(): void {
-    const def = pickRandomChallenge();
-    this.activeChallenge = {
-      id: def.id,
-      snippet: def.snippet,
-      description: def.description,
-      timeLimitMs: def.timeLimitSeconds * 1000,
-      startTime: Date.now(),
-      progress: 0,
-      startedOnNewLine: false
-    };
-    this.lastChallengeWords = this.wordsTyped;
-  }
-  private completeChallenge(): void {
-    if (!this.activeChallenge) return;
-    const length = this.activeChallenge.snippet.length;
-    const streakMultiplier = this.getCurrentStreakMultiplier();
-    const reward = length * TYPING_CONFIG.baseCharValue * TYPING_CONFIG.challengeRewardMultiplier * streakMultiplier;
-    this.resources += reward;
-    this.completedChallenges++;
-    // Small streak boost for success without exceeding cap
-    this.streakWords += 1;
-    this.activeChallenge = null;
-  }
-  private failChallenge(): void {
-    if (!this.activeChallenge) return;
-    this.failedChallenges++;
-    // Reset streak on failure
-    this.streakWords = 0;
-    this.activeChallenge = null;
-  }
-  // Public manual trigger (UI button)
-  public triggerChallenge(): boolean {
-    return this.typing.triggerChallenge();
-  }
-
   /**
    * Calculate the cost of the next producer purchase
    * Uses exponential scaling: baseCost × (multiplier ^ quantity)
@@ -236,18 +174,16 @@ export class GameEngine {
   getProducerCost(producerId: string): number {
     const producer = this.producers.find(u => u.id === producerId);
     if (!producer) return 0;
-
-    return Math.floor(producer.baseCost * Math.pow(producer.costMultiplier, producer.quantity));
+    return this.producerManager.getCost(producer);
   }
 
   /**
    * Check if the player can afford the next purchase of a producer
    */
   canAffordProducer(producerId: string): boolean {
-    const cost = this.getProducerCost(producerId);
-    // Disallow purchasing items with zero cost to avoid meaningless buys (e.g., manual)
-    if (cost <= 0) return false;
-    return this.resources >= cost;
+    const producer = this.producers.find(u => u.id === producerId);
+    if (!producer) return false;
+    return this.producerManager.canAfford(producer, this.resources);
   }
 
   /**
@@ -257,18 +193,11 @@ export class GameEngine {
   purchaseProducer(producerId: string): boolean {
     const producer = this.producers.find(u => u.id === producerId);
     if (!producer) return false;
-
-    const cost = this.getProducerCost(producerId);
-    if (this.resources < cost || cost <= 0) return false;
-
-    this.resources -= cost;
-    producer.quantity++;
-    producer.totalSpent += cost;
-
+    const res = this.producerManager.purchase(producer, this.resources);
+    if (!res.success) return false;
+    this.resources = res.newResources;
     this.updateProductionRate();
-    // Recalculate best value after a purchase
     this.calculateBestValue();
-
     return true;
   }
 
@@ -277,41 +206,8 @@ export class GameEngine {
    * Only recalculates every 5 seconds or after a purchase for stability
    */
   private calculateBestValue(): void {
-    const now = Date.now();
-
-    // Only recalculate if 5 seconds have passed since last calculation
-    if (now - this.lastBestValueCalc < 5000 && this.bestValueProducerId !== undefined) {
-      return;
-    }
-
-    this.lastBestValueCalc = now;
-
-    // Filter valid producers (exclude manual)
-    const candidates = this.producers.filter(
-      p => p.id !== 'codingSession' && p.productionRate > 0
-    );
-
-    if (candidates.length === 0) {
-      this.bestValueProducerId = undefined;
-      return;
-    }
-
-    // Find producer with best CURRENT cost/production ratio
-    let bestProducer = candidates[0];
-    let bestRatio = this.getProducerCost(bestProducer.id) / bestProducer.productionRate;
-
-    for (const producer of candidates) {
-      const currentCost = this.getProducerCost(producer.id);
-      if (currentCost <= 0) continue; // Skip if cost is invalid
-
-      const ratio = currentCost / producer.productionRate;
-      if (ratio < bestRatio) {
-        bestRatio = ratio;
-        bestProducer = producer;
-      }
-    }
-
-    this.bestValueProducerId = bestProducer.id;
+    this.producerManager.recalcBestValue(this.producers);
+    this.bestValueProducerId = this.producerManager.getBestValueId();
   }
 
   /**
@@ -319,15 +215,7 @@ export class GameEngine {
    * Called after any producer purchase
    */
   private updateProductionRate(): void {
-    let totalRate = 0;
-
-    for (const producer of this.producers) {
-      if (producer.id !== 'codingSession') {
-        totalRate += producer.productionRate * producer.quantity;
-      }
-    }
-
-    this.productionRate = totalRate;
+    this.productionRate = this.producerManager.totalProduction(this.producers);
   }
 
   /**
@@ -339,16 +227,7 @@ export class GameEngine {
     const deltaTime = (now - this.lastUpdate) / 1000; // Convert to seconds
     this.lastUpdate = now;
 
-    // Check for newly unlocked producers based on resources
-    for (const producer of this.producers) {
-      if (producer.unlockThreshold !== undefined &&
-          producer.unlockThreshold > 0 &&
-          !this.unlockedProducers.has(producer.id) &&
-          this.resources >= producer.unlockThreshold) {
-        this.unlockedProducers.add(producer.id);
-      }
-    }
-
+    this.producerManager.applyUnlocks(this.producers, this.resources, this.unlockedProducers);
 
     // Add resources based on production rate
     if (this.productionRate > 0) {
@@ -361,10 +240,7 @@ export class GameEngine {
       this.handleAutoBuy(now);
     }
 
-    // Challenge timeout check
-    if (this.activeChallenge && now - this.activeChallenge.startTime > this.activeChallenge.timeLimitMs) {
-      this.failChallenge();
-    }
+    // Challenge timeout handled inside TypingEngine
   }
 
   /**
@@ -377,15 +253,11 @@ export class GameEngine {
     this.autoBuyer.setSpeedLevel(this.autoBuySpeedLevel);
     const purchaseId = this.autoBuyer.tryPurchaseBest(now, this.resources, this.producers, (id) => this.getProducerCost(id));
     if (!purchaseId) return;
-    // perform purchase
-    const cost = this.getProducerCost(purchaseId);
-    if (this.resources < cost) return;
-    this.resources -= cost;
     const target = this.producers.find(p => p.id === purchaseId);
-    if (target) {
-      target.quantity++;
-      target.totalSpent += cost;
-    }
+    if (!target) return;
+    const res = this.producerManager.purchase(target, this.resources);
+    if (!res.success) return;
+    this.resources = res.newResources;
     this.updateProductionRate();
   }
 
@@ -424,17 +296,6 @@ export class GameEngine {
       clickPowerUpgradeCost: this.getClickPowerUpgradeCost(),
       canAffordClickPowerUpgrade: this.canAffordClickPowerUpgrade()
     };
-  }
-
-  /**
-   * Get time remaining until next auto-buy (in seconds)
-   */
-  private getTimeUntilNextAutoBuy(): number {
-    if (!this.autoBuyEnabled) return 0;
-    const interval = this.getAutoBuyInterval();
-    const timeSinceLastBuy = Date.now() - this.lastAutoBuy;
-    const timeRemaining = Math.max(0, interval - timeSinceLastBuy);
-    return Math.ceil(timeRemaining / 1000); // Convert to seconds
   }
 
   /**
@@ -659,21 +520,7 @@ export class GameEngine {
       producer.totalSpent = 0;
     }
 
-    // Reset typing stats
-    this.lastTypedChar = null;
-    this.consecutiveSameCharCount = 0;
-    this.streakWords = 0;
-    this.wordsTyped = 0;
-    this.currentWordLength = 0;
-
-    // Reset challenge state
-    this.activeChallenge = null;
-    this.lastChallengeWords = 0;
-    this.failedChallenges = 0;
-    this.completedChallenges = 0;
-    this.unlockedProducers = new Set<string>(['codingSession']);
-    this.purchasedUpgrades = new Set<string>();
-    this.clickPowerLevel = 0;
+    // Typing state reset handled by TypingEngine (runtime)
 
     this.lastUpdate = Date.now();
   }
