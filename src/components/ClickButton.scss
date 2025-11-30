@@ -3,15 +3,17 @@
 .click-button-container {
   display: flex;
   justify-content: center;
-  margin: 2rem 0;
+  align-items: center;
+  flex: 1;
+  padding: 2rem 0;
 }
 
 .click-button {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   border: none;
   border-radius: 50%;
-  width: clamp(150px, 40vw, 200px);
-  height: clamp(150px, 40vw, 200px);
+  width: clamp(180px, 30vw, 250px);
+  height: clamp(180px, 30vw, 250px);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
@@ -25,6 +27,8 @@
 
   @include bp.mobile {
     touch-action: manipulation;
+    width: clamp(150px, 40vw, 200px);
+    height: clamp(150px, 40vw, 200px);
   }
 
   &:hover {

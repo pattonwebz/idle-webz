@@ -31,11 +31,17 @@ function App() {
         </header>
         <main className="app-main">
           <ResourceDisplay />
-          <div className="action-buttons">
-            <ClickButton />
-            <AutoBuy />
+
+          {/* Click and Typing Section - Side by Side */}
+          <div className="interactive-section">
+            <div className="click-section">
+              <ClickButton />
+              <AutoBuy />
+            </div>
+            <div className="typing-section">
+              <TypingPanel />
+            </div>
           </div>
-          <TypingPanel />
 
           {/* Tab Navigation */}
           <div className="tab-navigation">
