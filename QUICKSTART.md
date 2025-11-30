@@ -1,36 +1,34 @@
 ## 🎯 Quick Start Guide
 
-Your Incremental Clicker Game is now **production-ready** for manual development!
+Your Idle Webz game is now ready for continued development!
 
 ### ✅ What's Been Done
 
 #### 1. **Comprehensive Documentation**
 - ✅ README.md - Complete project overview
 - ✅ ARCHITECTURE.md - Technical architecture guide
-- ✅ API.md - Full API reference
+- ✅ API.md - Full API reference (Idle Webz)
 - ✅ CONTRIBUTING.md - Contribution guidelines
-- ✅ IMPROVEMENTS.md - This summary document
+- ✅ IMPROVEMENTS.md - Summary of improvements
 
-#### 2. **Responsive Design**
-- ✅ All CSS files updated with mobile-first breakpoints
+#### 2. **Responsive & Accessible Design**
+- ✅ SCSS files updated with mobile-first breakpoints
 - ✅ Touch-friendly button sizes (44px minimum)
-- ✅ Fluid typography using clamp()
-- ✅ Responsive grid layouts
-- ✅ Works on mobile, tablet, and desktop
+- ✅ High-contrast styles (AA compliant) for buttons/cards
+- ✅ Responsive grids and fluid typography using clamp()
 
 #### 3. **Code Quality**
 - ✅ Zero ESLint errors
-- ✅ Zero TypeScript errors
-- ✅ JSDoc comments on all functions
-- ✅ Proper TypeScript types (no `any`)
+- ✅ Zero TypeScript build errors
+- ✅ Clear module boundaries (GameEngine + AutoBuyer + TypingEngine + ProducerManager)
 - ✅ Accessibility attributes added
 - ✅ Clean code organization
 
-#### 4. **New Files Created**
-- ✅ src/types/game.types.ts - Type definitions
-- ✅ src/utils/gameUtils.ts - Utility functions
-- ✅ src/constants/gameConstants.ts - Configuration
-- ✅ src/hooks/useGame.ts - Custom hook
+#### 4. **Key Modules**
+- ✅ src/game/GameEngine.ts – Orchestrates resources, producers, upgrades
+- ✅ src/game/autobuy/AutoBuyer.ts – Auto-buy timing and best-value purchasing
+- ✅ src/game/typing/TypingEngine.ts – Typing rewards and challenge lifecycle
+- ✅ src/game/producers/ProducerManager.ts – Cost, affordability, unlocks, best-value
 
 ---
 
@@ -50,51 +48,39 @@ npm run dev
 
 ### 📂 Key Files to Know
 
-**Core Game Logic:**
-- `src/game/GameEngine.ts` - All game mechanics
-- `src/context/GameContext.tsx` - React state management
-- `src/hooks/useGame.ts` - Hook to access game state
+**Core Logic & State:**
+- `src/game/GameEngine.ts` – Core orchestration and public API
+- `src/context/GameContext.tsx` – React state management via Context
+- `src/hooks/useGame.ts` – Hook to access game state
 
 **Components:**
-- `src/components/ClickButton.tsx` - Main click button
-- `src/components/ResourceDisplay.tsx` - Resource counter
-- `src/components/UpgradeList.tsx` - Upgrade cards
-- `src/components/GameControls.tsx` - Settings menu
+- `src/components/ClickButton.tsx` – Manual clicks
+- `src/components/ResourceDisplay.tsx` – Resources & rate (format toggle)
+- `src/components/Upgrades.tsx` – Upgrades tab (OneTimeCard + RepeatableCard)
+- `src/components/ProducerList.tsx` – Producer cards + NextUnlockHint
+- `src/components/TypingPanel.tsx` – Typing UI (ChallengeBox + ToggleChallenges)
 
-**Utilities:**
-- `src/utils/gameUtils.ts` - Helper functions
-- `src/constants/gameConstants.ts` - Game config
-- `src/types/game.types.ts` - TypeScript types
+**Utilities & Constants:**
+- `src/utils/gameUtils.ts` – Number/time formatting helpers
+- `src/constants/gameConstants.ts` – Game config (upgrades, typing config)
+- `src/types/` – TypeScript types
 
 ---
 
 ### 💡 Adding New Features
 
-#### Example: Add a New Upgrade Tier
+#### Example: Add a New Producer Tier
 
-1. **Edit `src/game/GameEngine.ts`**:
-```typescript
-// In initializeUpgrades() method, add:
-{
-  id: 'superFactory',
-  name: 'Super Factory',
-  description: 'Produces 500 resources/sec',
-  baseCost: 100000,
-  costMultiplier: 1.15,
-  productionRate: 500,
-  quantity: 0
-}
-```
+1. **Edit `src/constants/gameConstants.ts`** to add a new entry in `PRODUCER_TIERS`.
+2. Production and unlock thresholds will be picked up automatically by the engine/UI.
 
-2. **That's it!** The UI will automatically display the new upgrade.
-
-#### Example: Use Utility Functions
+#### Example: Use Formatting Helpers
 
 ```typescript
-import { formatNumberWithSuffix, formatTime } from './utils/gameUtils';
+import { formatNumberUnified, formatTime } from './utils/gameUtils';
 
-// Format large numbers
-const display = formatNumberWithSuffix(1234567); // "1.23M"
+// Unified formatting (suffix/scientific)
+const display = formatNumberUnified(1234567);
 
 // Format time
 const timeStr = formatTime(3665); // "1h 1m 5s"
@@ -104,14 +90,14 @@ const timeStr = formatTime(3665); // "1h 1m 5s"
 
 ### 📋 Next Feature Ideas
 
-**High Priority** (from suggestions.md):
-1. Better number formatting (K, M, B suffixes)
-2. Bulk buy options (buy 10, 25, 100)
-3. Visual feedback for clicks and purchases
-4. Statistics panel
-5. Achievement system basics
+**High Priority**:
+1. Bulk buy options (buy 10/25/100)
+2. Visual feedback for clicks and purchases
+3. Statistics panel
+4. Achievements basics
+5. Settings page (number format preference)
 
-**See `docs/suggestions.md` for complete list.**
+See `docs/suggestions.md` for the full list.
 
 ---
 
@@ -132,10 +118,10 @@ npm run preview
 
 ### 📖 Documentation Links
 
-- **Architecture**: See `docs/ARCHITECTURE.md`
-- **API Reference**: See `docs/API.md`
-- **Contributing**: See `docs/CONTRIBUTING.md`
-- **Features**: See `docs/suggestions.md`
+- **Architecture**: `docs/ARCHITECTURE.md`
+- **API Reference**: `docs/API.md`
+- **Contributing**: `docs/CONTRIBUTING.md`
+- **Feature Ideas**: `docs/suggestions.md`
 
 ---
 
@@ -151,50 +137,34 @@ All components are fully responsive and touch-friendly!
 
 ### ✨ Current Game Features
 
-1. **Manual Clicking** - Click button for +1 resource
-2. **Auto Production** - Purchase upgrades for passive income
-3. **5 Upgrade Tiers**:
-   - Auto Clicker (1/sec) - 10 cost
-   - Factory (5/sec) - 100 cost
-   - Industrial Complex (25/sec) - 1,000 cost
-   - Mega Factory (100/sec) - 10,000 cost
-4. **Auto-Save** - Every 5 seconds to localStorage
-5. **Reset Function** - Start over with confirmation
-6. **Exponential Scaling** - 15% cost increase per purchase
+1. **Manual Clicking** – Click button for resources (click power upgradable)
+2. **Typing Mechanic** – Optional typing rewards with word/streak bonuses
+3. **Code Challenges** – Optional mini challenges (exact match, newline start)
+4. **Auto Production** – Producers with exponential cost scaling
+5. **Auto-Buy** – Optional, with speed upgrades (min 2s interval)
+6. **Upgrades Tab** – Purchase Typing, Auto-Buy, Challenges, and repeatables
+7. **Auto-Save** – Persist to localStorage
 
 ---
 
 ### 🔧 Common Tasks
 
-**Add a constant:**
-Edit `src/constants/gameConstants.ts`
-
-**Add a utility function:**
-Edit `src/utils/gameUtils.ts`
-
-**Add a TypeScript type:**
-Edit `src/types/game.types.ts`
-
-**Modify game mechanics:**
-Edit `src/game/GameEngine.ts`
-
-**Change UI components:**
-Edit files in `src/components/`
-
-**Adjust styling:**
-Edit corresponding `.css` files
+- Add a constant: edit `src/constants/gameConstants.ts`
+- Add a utility function: edit `src/utils/gameUtils.ts`
+- Add a TypeScript type: edit files in `src/types/`
+- Modify game mechanics: edit `src/game/` modules
+- Change UI components: edit files in `src/components/`
+- Adjust styling: edit corresponding `.scss` files
 
 ---
 
 ### 🎉 Status: READY FOR DEVELOPMENT
 
-- ✅ All lint errors fixed
-- ✅ All build errors fixed
-- ✅ Fully responsive design
+- ✅ No lint errors
+- ✅ No TypeScript build errors
+- ✅ Responsive and accessible
 - ✅ Comprehensive documentation
-- ✅ Clean code architecture
-- ✅ Type-safe TypeScript
-- ✅ Production-ready
+- ✅ Clean architecture and module boundaries
 
 **You can now start building features with confidence!**
 
@@ -211,5 +181,4 @@ Edit corresponding `.css` files
 
 **Happy Coding! 🚀**
 
-Last Updated: November 26, 2025
-
+Last Updated: November 30, 2025

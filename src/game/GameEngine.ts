@@ -42,9 +42,12 @@ export class GameEngine {
   public autoBuyEnabled: boolean;
   public autoBuySpeedLevel: number; // Number of speed upgrades purchased
   private lastUpdate: number;
-  private lastAutoBuy: number;
   private bestValueProducerId: string | undefined;
-  private lastBestValueCalc: number;
+  // Core state
+  private unlockedProducers: Set<string>;
+  private purchasedUpgrades: Set<string>;
+  private clickPowerLevel: number;
+  private challengesEnabled: boolean;
   // Typing mechanic state
   private typing: TypingEngine;
   private autoBuyer: AutoBuyer;
@@ -56,10 +59,13 @@ export class GameEngine {
     this.lastUpdate = Date.now();
     this.autoBuyEnabled = false;
     this.autoBuySpeedLevel = 0;
-    this.lastAutoBuy = Date.now();
     this.producers = this.initializeProducers();
     this.bestValueProducerId = undefined;
-    this.lastBestValueCalc = 0;
+    // Initialize core state
+    this.unlockedProducers = new Set<string>(['codingSession']);
+    this.purchasedUpgrades = new Set<string>();
+    this.clickPowerLevel = 0;
+    this.challengesEnabled = true;
     // Typing state init
     this.typing = new TypingEngine();
     // AutoBuyer init
@@ -149,6 +155,11 @@ export class GameEngine {
   /** Handle a typed character (optional mechanic) */
   typeChar(char: string): void {
     this.typing.handleChar(char, (val) => { this.resources += val; });
+  }
+
+  /** Public manual trigger for a typing challenge */
+  public triggerChallenge(): boolean {
+    return this.typing.triggerChallenge();
   }
 
   /**
@@ -275,6 +286,8 @@ export class GameEngine {
       timeUntilNextAutoBuy: this.autoBuyer.getSecondsUntilNext(Date.now()),
       // Upgrades
       upgrades: this.getUpgrades(),
+      typingUnlocked: this.purchasedUpgrades.has(UPGRADES.TYPING.id),
+      challengesUnlocked: this.purchasedUpgrades.has(UPGRADES.CHALLENGES.id),
       // Typing stats
       ...this.typing.getUIState(),
       // Click power upgrade info
@@ -479,7 +492,7 @@ export class GameEngine {
     if (!this.purchasedUpgrades.has(UPGRADES.AUTO_BUY.id)) return;
     this.autoBuyEnabled = !this.autoBuyEnabled;
     if (this.autoBuyEnabled) {
-      this.lastAutoBuy = Date.now();
+      this.lastUpdate = Date.now();
     }
   }
 
@@ -500,7 +513,7 @@ export class GameEngine {
     this.productionRate = 0;
     this.autoBuyEnabled = false;
     this.autoBuySpeedLevel = 0;
-    this.lastAutoBuy = Date.now();
+    this.lastUpdate = Date.now();
 
     for (const producer of this.producers) {
       producer.quantity = 0;
@@ -509,6 +522,9 @@ export class GameEngine {
 
     // Typing state reset handled by TypingEngine (runtime)
 
-    this.lastUpdate = Date.now();
+    this.unlockedProducers = new Set<string>(['codingSession']);
+    this.purchasedUpgrades = new Set<string>();
+    this.clickPowerLevel = 0;
+    this.challengesEnabled = true;
   }
 }
