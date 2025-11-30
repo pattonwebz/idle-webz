@@ -33,19 +33,6 @@ export interface ProducerTier {
 }
 
 /**
- * Active challenge state with progression tracking
- */
-interface ActiveChallenge {
-  id: string;
-  snippet: string;
-  description: string;
-  timeLimitMs: number;
-  startTime: number;
-  progress: number;
-  startedOnNewLine: boolean;
-}
-
-/**
  * Main game engine class
  */
 export class GameEngine {
