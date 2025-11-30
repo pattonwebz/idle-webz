@@ -27,7 +27,7 @@ export const WORD_BOUNDARIES = new Set<string>([' ', '\n', '\t', '.', ',', '!', 
 
 export const TYPING_CONFIG = {
   /** Resources gained per valid character */
-  baseCharValue: 0.2,
+  baseCharValue: 0.5,
   /** Additional multiplier applied on completed word (wordReward = charsInWord * baseCharValue * wordBonusMultiplier * streakMultiplier) */
   wordBonusMultiplier: 2,
   /** Increment added per successful word to streak multiplier (multiplier = 1 + streak * streakStep, capped) */
@@ -45,6 +45,11 @@ export const TYPING_CONFIG = {
 /**
  * Producer tier definitions (dev/infrastructure hybrid theme)
  * id changes are intentional; previous saves invalidated (user confirmed reset)
+ *
+ * Balancing philosophy:
+ * - Each tier unlocks at 5x the unlock of the previous tier
+ * - Each tier costs 5x more than the previous tier base cost
+ * - Production rates scale to keep pace with exponential growth
  */
 export const PRODUCER_TIERS = {
   SCRIPT_RUNNER: {
@@ -58,25 +63,25 @@ export const PRODUCER_TIERS = {
   BUILD_SERVER: {
     id: 'buildServer',
     name: 'Build Server',
-    description: 'Compiles and bundles projects continuously (6 res/sec)',
-    baseCost: 120 * 120, // 14,400
-    productionRate: 6,
-    unlockThreshold: 120 * 100, // 12,000 resources needed to appear
+    description: 'Compiles and bundles projects continuously (8 res/sec)',
+    baseCost: 600, // 5x script runner base (120 * 5)
+    productionRate: 8,
+    unlockThreshold: 500, // 5x script runner unlock (100 * 5)
   },
   CI_PIPELINE: {
     id: 'ciPipeline',
     name: 'CI Pipeline',
-    description: 'Runs tests & deployments automatically (30 res/sec)',
-    baseCost: 14400 * 120, // 1,728,000
-    productionRate: 30,
-    unlockThreshold: 14400 * 100, // 1,440,000 resources needed
+    description: 'Runs tests & deployments automatically (50 res/sec)',
+    baseCost: 3000, // 5x build server base (600 * 5)
+    productionRate: 50,
+    unlockThreshold: 2500, // 5x build server unlock (500 * 5)
   },
   CLOUD_ORCHESTRATOR: {
     id: 'cloudOrchestrator',
     name: 'Cloud Orchestrator',
-    description: 'Scales microservices seamlessly (180 res/sec)',
-    baseCost: 1728000 * 120, // 207,360,000
-    productionRate: 180,
-    unlockThreshold: 1728000 * 100, // 172,800,000 resources needed
+    description: 'Scales microservices seamlessly (400 res/sec)',
+    baseCost: 15000, // 5x CI pipeline base (3000 * 5)
+    productionRate: 400,
+    unlockThreshold: 12500, // 5x CI pipeline unlock (2500 * 5)
   },
 } as const;

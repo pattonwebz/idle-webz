@@ -419,7 +419,7 @@ export class GameEngine {
     }
 
     // Check if typing should be unlocked
-    if (!this.typingUnlocked && this.resources >= 1000) {
+    if (!this.typingUnlocked && this.resources >= 200) {
       this.typingUnlocked = true;
     }
 
