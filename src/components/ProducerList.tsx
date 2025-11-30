@@ -5,6 +5,7 @@
 import { useGame } from '../hooks/useGame';
 import './ProducerList.scss';
 import { formatNumberAdaptive } from '../utils/gameUtils';
+import { NextUnlockHint } from './Producers/NextUnlockHint';
 
 /**
  * Grid of producer cards that players can purchase to increase production
@@ -68,11 +69,7 @@ export const ProducerList: React.FC = () => {
             </div>
           ))}
           {lockedProducers.length > 0 && (
-          <div className="locked-hint" aria-live="polite">
-            <span className="unlock-icon">🔒 Next Unlock</span>
-            <span className="unlock-name">{lockedProducers[0].name}</span>
-            <span className="unlock-cost">{formatNumber(lockedProducers[0].unlockThreshold || 0)}</span>
-          </div>
+          <NextUnlockHint lockedProducers={lockedProducers as any} />
         )}
       </div>
     </div>
